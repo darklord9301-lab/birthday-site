@@ -27,16 +27,24 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
-            overflow: hidden;
-            background: linear-gradient(135deg, 
-                var(--sky-blue) 0%, 
-                #6BA6E8 25%, 
-                #87CEEB 50%, 
-                var(--white) 100%);
-            position: relative;
-        }
+           font-family: 'Inter', sans-serif;
+           height: 100vh;
+           overflow: hidden;
+           background: linear-gradient(135deg, 
+               var(--sky-blue) 0%, 
+               #6BA6E8 25%, 
+               #87CEEB 50%, 
+               var(--white) 100%);
+           background-size: 400% 400%;
+           animation: skyShift 20s ease-in-out infinite;
+           position: relative;
+       }
+
+       @keyframes skyShift {
+           0% { background-position: 0% 50%; }
+           50% { background-position: 100% 50%; }
+           100% { background-position: 0% 50%; }
+       } 
 
         /* Parallax cloud layers */
         .cloud-layer {
