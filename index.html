@@ -3,8 +3,378 @@
 <head>
   <meta charset="UTF-8">
   <title>Happy Birthday ❤️</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(-45deg, #ff6b9d, #c44569, #f8b500, #f0932b);
+      background-size: 400% 400%;
+      animation: gradientShift 8s ease infinite;
+      overflow: hidden;
+      height: 100vh;
+      position: relative;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .birthday-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 30px;
+      padding: 60px 40px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.1);
+      transform: scale(0.8);
+      animation: cardEntrance 1.2s ease-out forwards;
+      max-width: 600px;
+      position: relative;
+    }
+    
+    @keyframes cardEntrance {
+      to {
+        transform: scale(1);
+      }
+    }
+    
+    .main-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 20px;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      animation: titleGlow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes titleGlow {
+      from { text-shadow: 0 4px 20px rgba(255, 255, 255, 0.3); }
+      to { text-shadow: 0 4px 30px rgba(255, 255, 255, 0.6), 0 0 40px rgba(255, 107, 157, 0.4); }
+    }
+    
+    .surprise-text {
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 30px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      animation: textFloat 3s ease-in-out infinite;
+    }
+    
+    @keyframes textFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .countdown {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .countdown-item {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 15px 20px;
+      min-width: 80px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .countdown-number {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #fff;
+      display: block;
+    }
+    
+    .countdown-label {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .hearts {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .heart {
+      position: absolute;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 20px;
+      animation: heartFloat 6s linear infinite;
+    }
+    
+    @keyframes heartFloat {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    .balloons {
+      position: absolute;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .balloon {
+      position: absolute;
+      width: 40px;
+      height: 50px;
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      animation: balloonFloat 4s ease-in-out infinite;
+    }
+    
+    .balloon:nth-child(1) {
+      background: #ff6b9d;
+      top: 20%;
+      left: 15%;
+      animation-delay: -0.5s;
+    }
+    
+    .balloon:nth-child(2) {
+      background: #f8b500;
+      top: 30%;
+      right: 20%;
+      animation-delay: -1s;
+    }
+    
+    .balloon:nth-child(3) {
+      background: #c44569;
+      bottom: 25%;
+      left: 20%;
+      animation-delay: -1.5s;
+    }
+    
+    .balloon:nth-child(4) {
+      background: #f0932b;
+      bottom: 35%;
+      right: 15%;
+      animation-delay: -2s;
+    }
+    
+    @keyframes balloonFloat {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-20px) rotate(2deg); }
+    }
+    
+    .confetti {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+    
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      animation: confettiFall 3s linear infinite;
+    }
+    
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+    
+    .gift-box {
+      margin: 20px 0;
+      font-size: 4rem;
+      animation: giftBounce 2s ease-in-out infinite;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    
+    .gift-box:hover {
+      transform: scale(1.1);
+    }
+    
+    @keyframes giftBounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .sparkles {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      margin: -100px 0 0 -100px;
+      pointer-events: none;
+    }
+    
+    .sparkle {
+      position: absolute;
+      color: #fff;
+      font-size: 20px;
+      animation: sparkleRotate 4s linear infinite;
+    }
+    
+    @keyframes sparkleRotate {
+      0% { transform: rotate(0deg) translateX(80px) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: rotate(360deg) translateX(80px) rotate(-360deg); opacity: 0; }
+    }
+    
+    .message {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin-top: 20px;
+      font-style: italic;
+    }
+  </style>
 </head>
-<body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#fff0f6;">
-  <h1>🎉 Surprise Coming Soon 🎉</h1>
+<body>
+  <div class="hearts"></div>
+  <div class="confetti"></div>
+  <div class="balloons">
+    <div class="balloon"></div>
+    <div class="balloon"></div>
+    <div class="balloon"></div>
+    <div class="balloon"></div>
+  </div>
+  
+  <div class="container">
+    <div class="birthday-card">
+      <div class="sparkles">
+        <div class="sparkle" style="animation-delay: 0s;">✨</div>
+        <div class="sparkle" style="animation-delay: -1s;">⭐</div>
+        <div class="sparkle" style="animation-delay: -2s;">✨</div>
+        <div class="sparkle" style="animation-delay: -3s;">⭐</div>
+      </div>
+      
+      <h1 class="main-title">🎉 Happy Birthday! 🎉</h1>
+      <p class="surprise-text">Something Special is Coming...</p>
+      
+      <div class="gift-box" onclick="createBurst()">🎁</div>
+      
+      <div class="countdown">
+        <div class="countdown-item">
+          <span class="countdown-number" id="hours">00</span>
+          <span class="countdown-label">Hours</span>
+        </div>
+        <div class="countdown-item">
+          <span class="countdown-number" id="minutes">00</span>
+          <span class="countdown-label">Minutes</span>
+        </div>
+        <div class="countdown-item">
+          <span class="countdown-number" id="seconds">00</span>
+          <span class="countdown-label">Seconds</span>
+        </div>
+      </div>
+      
+      <p class="message">Get ready for an amazing celebration! 💖</p>
+    </div>
+  </div>
+  
+  <script>
+    // Floating hearts
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.innerHTML = '💖';
+      heart.style.left = Math.random() * 100 + '%';
+      heart.style.animationDelay = Math.random() * 2 + 's';
+      document.querySelector('.hearts').appendChild(heart);
+      
+      setTimeout(() => heart.remove(), 6000);
+    }
+    
+    // Confetti pieces
+    function createConfetti() {
+      const colors = ['#ff6b9d', '#c44569', '#f8b500', '#f0932b', '#fff'];
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti-piece';
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = Math.random() * 3 + 's';
+      document.querySelector('.confetti').appendChild(confetti);
+      
+      setTimeout(() => confetti.remove(), 3000);
+    }
+    
+    // Gift box burst effect
+    function createBurst() {
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => createConfetti(), i * 50);
+      }
+    }
+    
+    // Countdown timer (counts to next minute for demo)
+    function updateCountdown() {
+      const now = new Date();
+      const nextMinute = new Date(now);
+      nextMinute.setMinutes(now.getMinutes() + 1);
+      nextMinute.setSeconds(0);
+      
+      const diff = nextMinute - now;
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+      document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+      document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+    }
+    
+    // Start animations
+    setInterval(createHeart, 800);
+    setInterval(createConfetti, 300);
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+    
+    // Initial burst
+    setTimeout(() => createBurst(), 1000);
+  </script>
 </body>
 </html>
