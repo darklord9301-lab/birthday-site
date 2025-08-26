@@ -165,15 +165,27 @@
             right: 12px;
         }
 
-        @keyframes floatSlow {
-            0% { transform: translateX(-200px); }
-            100% { transform: translateX(calc(100vw + 200px)); }
+       @keyframes floatSlow {
+            0% { transform: translateX(-200px) translateY(0); }
+            50% { transform: translateX(50vw) translateY(-8px); }
+            100% { transform: translateX(calc(100vw + 200px)) translateY(0); }
         }
 
         @keyframes floatMedium {
-            0% { transform: translateX(-150px); }
-            100% { transform: translateX(calc(100vw + 150px)); }
+            0% { transform: translateX(-150px) translateY(0); }
+            50% { transform: translateX(50vw) translateY(6px); }
+            100% { transform: translateX(calc(100vw + 150px)) translateY(0); }
         }
+
+        @keyframes cloudBob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* Add subtle transparency by depth */
+        .cloud1, .cloud3 { opacity: 0.9; }   /* foreground */
+        .cloud2, .cloud4 { opacity: 0.7; }   /* background */
+
 
         /* Main container with glassmorphism */
         .container {
@@ -779,8 +791,11 @@
             
             // Randomize cloud animations
             document.querySelectorAll('.cloud').forEach(cloud => {
-                const delay = Math.random() * 15;
-                cloud.style.animationDelay = `-${delay}s`;
+            const delay = Math.random() * 15;
+            cloud.style.animationDelay = `-${delay}s`;
+
+            // Extra bobbing layer for realism
+            cloud.style.animation = `${cloud.style.animation}, cloudBob ${8 + Math.random()*4}s ease-in-out infinite`;
             });
         });
 
