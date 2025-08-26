@@ -24,6 +24,7 @@
             --glass: rgba(255, 255, 255, 0.1);
             --shadow-dark: rgba(0, 0, 0, 0.3);
             --shadow-light: rgba(0, 0, 0, 0.1);
+            --success-green: #4CAF50;
         }
 
         body {
@@ -39,6 +40,12 @@
             animation: skyDrift 40s ease-in-out infinite alternate;
             position: relative;
             cursor: none;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        body.loaded {
+            opacity: 1;
         }
 
         @keyframes skyDrift {
@@ -54,10 +61,11 @@
             left: 0;
             width: 120px;
             height: 80px;
-            pointer-events: none;
+            pointer-events: auto;
             z-index: 100;
             transform-origin: center;
             filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            cursor: pointer;
         }
 
         .bird {
@@ -67,16 +75,28 @@
             cursor: pointer;
         }
 
+        /* Larger clickable area */
+        .bird::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            right: -15px;
+            bottom: -15px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
         /* Realistic Bird Body */
         .bird-body {
             width: 55px;
             height: 35px;
             background: linear-gradient(145deg, 
-                #FFE4B5 0%,     /* Light peach */
-                #F4A460 20%,    /* Sandy brown */
-                #DEB887 50%,    /* Burlywood */
-                #CD853F 80%,    /* Peru */
-                #A0522D 100%    /* Sienna */
+                #FFE4B5 0%,     
+                #F4A460 20%,    
+                #DEB887 50%,    
+                #CD853F 80%,    
+                #A0522D 100%    
             );
             border-radius: 60% 40% 50% 70%;
             position: absolute;
@@ -88,6 +108,7 @@
                 inset 0 -2px 4px rgba(0,0,0,0.2),
                 0 2px 8px rgba(0,0,0,0.3);
             border: 1px solid rgba(139, 69, 19, 0.3);
+            transition: all 0.3s ease;
         }
 
         /* Realistic Head */
@@ -95,10 +116,10 @@
             width: 32px;
             height: 28px;
             background: linear-gradient(135deg, 
-                #F5DEB3 0%,     /* Wheat */
-                #DEB887 30%,    /* Burlywood */
-                #D2B48C 70%,    /* Tan */
-                #BC9A6A 100%    /* Darker tan */
+                #F5DEB3 0%,     
+                #DEB887 30%,    
+                #D2B48C 70%,    
+                #BC9A6A 100%    
             );
             border-radius: 50% 60% 45% 55%;
             position: absolute;
@@ -110,6 +131,7 @@
                 inset 0 -1px 3px rgba(0,0,0,0.2),
                 0 2px 6px rgba(0,0,0,0.25);
             border: 1px solid rgba(139, 69, 19, 0.2);
+            transition: all 0.3s ease;
         }
 
         /* Realistic Beak */
@@ -178,12 +200,12 @@
             width: 70px;
             height: 45px;
             background: linear-gradient(45deg, 
-                #8B4513 0%,     /* Saddle brown */
-                #A0522D 20%,    /* Sienna */
-                #CD853F 40%,    /* Peru */
-                #DEB887 60%,    /* Burlywood */
-                #D2B48C 80%,    /* Tan */
-                #F4A460 100%    /* Sandy brown */
+                #8B4513 0%,     
+                #A0522D 20%,    
+                #CD853F 40%,    
+                #DEB887 60%,    
+                #D2B48C 80%,    
+                #F4A460 100%    
             );
             border-radius: 60% 30% 70% 80%;
             animation: wingFlap 1.5s ease-in-out infinite;
@@ -317,7 +339,7 @@
 
         /* Bird Movement States */
         .bird-container.flying .bird-wing {
-            animation: wingFlapFast 0.8s ease-in-out infinite;
+            animation: wingFlapFast 0.6s ease-in-out infinite;
         }
 
         .bird-container.hovering .bird-body,
@@ -335,12 +357,28 @@
             animation: birdExcite 0.6s ease-out;
         }
 
+        .bird-container:hover .bird-body,
+        .bird-container:hover .bird-head {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
         @keyframes birdExcite {
             0% { transform: scale(1) rotate(0deg); }
-            25% { transform: scale(1.1) rotate(-5deg); }
-            50% { transform: scale(1.15) rotate(5deg); }
-            75% { transform: scale(1.05) rotate(-2deg); }
+            25% { transform: scale(1.15) rotate(-8deg); }
+            50% { transform: scale(1.2) rotate(8deg); }
+            75% { transform: scale(1.1) rotate(-4deg); }
             100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* Scared animation */
+        .bird-container.scared .bird-wing {
+            animation: wingFlapFast 0.4s ease-in-out infinite;
+        }
+
+        /* Glow effect on click */
+        .bird-container.glowing {
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.3));
         }
 
         /* Feather particle effects */
@@ -352,25 +390,29 @@
             border-radius: 50% 10%;
             pointer-events: none;
             z-index: 150;
-            animation: featherFloat 2s ease-out forwards;
+            animation: featherFloat 3s ease-out forwards;
         }
 
         @keyframes featherFloat {
             0% { 
-                opacity: 0.8; 
+                opacity: 0.9; 
                 transform: scale(1) rotate(0deg) translateY(0px);
             }
-            50% { 
-                opacity: 0.6; 
-                transform: scale(0.8) rotate(180deg) translateY(-20px);
+            30% { 
+                opacity: 0.8; 
+                transform: scale(0.9) rotate(90deg) translateY(-15px);
+            }
+            70% { 
+                opacity: 0.4; 
+                transform: scale(0.6) rotate(270deg) translateY(-35px);
             }
             100% { 
                 opacity: 0; 
-                transform: scale(0.3) rotate(360deg) translateY(-40px);
+                transform: scale(0.2) rotate(360deg) translateY(-60px);
             }
         }
 
-        /* Cloud layers */
+        /* Enhanced cloud layers with subtle movement */
         .cloud-layer {
             position: absolute;
             width: 100%;
@@ -387,6 +429,7 @@
             border-radius: 100px;
             backdrop-filter: blur(2px);
             box-shadow: 0 8px 32px rgba(255, 255, 255, 0.3);
+            animation: cloudFloat 20s infinite ease-in-out;
         }
 
         .cloud::before,
@@ -403,7 +446,7 @@
             height: 60px;
             top: 15%;
             left: -200px;
-            animation: floatSlow 25s infinite linear;
+            animation: floatSlow 25s infinite linear, cloudBob 8s ease-in-out infinite;
         }
 
         .cloud1::before {
@@ -425,8 +468,8 @@
             height: 45px;
             top: 35%;
             left: -150px;
-            animation: floatMedium 30s infinite linear;
-            animation-delay: -10s;
+            animation: floatMedium 30s infinite linear, cloudBob 6s ease-in-out infinite;
+            animation-delay: -10s, -2s;
         }
 
         .cloud2::before {
@@ -448,8 +491,8 @@
             height: 80px;
             top: 60%;
             left: -250px;
-            animation: floatSlow 35s infinite linear;
-            animation-delay: -5s;
+            animation: floatSlow 35s infinite linear, cloudBob 10s ease-in-out infinite;
+            animation-delay: -5s, -4s;
         }
 
         .cloud3::before {
@@ -471,8 +514,8 @@
             height: 40px;
             top: 80%;
             left: -120px;
-            animation: floatMedium 28s infinite linear;
-            animation-delay: -15s;
+            animation: floatMedium 28s infinite linear, cloudBob 7s ease-in-out infinite;
+            animation-delay: -15s, -1s;
         }
 
         .cloud4::before {
@@ -531,8 +574,18 @@
             text-align: center;
             max-width: 500px;
             width: 100%;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: auto;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: panelSlideIn 1s ease 0.5s forwards;
+        }
+
+        @keyframes panelSlideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .main-panel:hover {
@@ -552,6 +605,12 @@
             background-clip: text;
             margin-bottom: 0.5rem;
             letter-spacing: 1px;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.1); }
         }
 
         .subtitle {
@@ -600,6 +659,30 @@
             background: rgba(255, 255, 255, 0.95);
             transform: translateY(-2px);
             box-shadow: 0 12px 24px rgba(74, 144, 226, 0.2);
+        }
+
+        .security-input.success {
+            border-color: var(--success-green);
+            background: rgba(76, 175, 80, 0.1);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+            animation: successPulse 0.6s ease;
+        }
+
+        .security-input.error {
+            border-color: var(--red);
+            background: rgba(196, 69, 54, 0.1);
+            animation: errorShake 0.6s ease;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
 
         .security-input::placeholder {
@@ -860,7 +943,7 @@
             <p class="subtitle">Only for you, my queen....!</p>
 
             <!-- Security question form -->
-            <div class="question-text">Answer the question to enter!✨</div>
+            <div class="question-text">Answer the question to enter!</div>
             
             <div class="input-container">
                 <input 
@@ -889,7 +972,7 @@
             caseSensitive: false
         };
 
-        // Enhanced Realistic Bird System
+        // Enhanced Realistic Bird System with Physics and Audio
         class RealisticBird {
             constructor() {
                 this.container = document.getElementById('birdContainer');
@@ -903,112 +986,187 @@
                 this.velocityX = 0;
                 this.velocityY = 0;
                 this.speed = 0;
-                this.maxSpeed = 6;
+                this.maxSpeed = 4;
                 
-                // Movement properties
-                this.followSpeed = 0.05; // Slower, more natural following
-                this.dampening = 0.92; // Natural momentum dampening
-                this.minDistance = 80; // Minimum distance to maintain from cursor
-                this.hoverRadius = 100; // Radius around cursor where bird hovers
+                // Movement properties with enhanced physics
+                this.followSpeed = 0.03;
+                this.dampening = 0.88;
+                this.minDistance = 100;
+                this.hoverRadius = 120;
+                this.oscillationSpeed = 0.02;
                 
                 // Animation states
                 this.isFlying = false;
                 this.isHovering = true;
+                this.isScared = false;
                 this.lastMoveTime = Date.now();
-                this.hoverOffset = { x: 0, y: 0 };
-                this.hoverAngle = 0;
+                this.hoverAngle = Math.random() * Math.PI * 2;
                 
-                // Mobile detection
+                // Hover oscillation for realism
+                this.hoverOffsetX = 0;
+                this.hoverOffsetY = 0;
+                this.baseHoverRadius = 80;
+                
+                // Mobile and touch support
                 this.isMobile = window.innerWidth <= 768;
+                this.isTouch = 'ontouchstart' in window;
+                
+                // Audio context for bird sounds
+                this.audioContext = null;
+                this.initAudio();
                 
                 this.init();
+            }
+            
+            initAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Audio context not supported');
+                }
             }
             
             init() {
                 this.updatePosition();
                 this.setupEventListeners();
                 this.animate();
+                
+                // Start with gentle movement
+                setTimeout(() => {
+                    this.startIdleMovement();
+                }, 1000);
             }
             
             setupEventListeners() {
-                // Mouse movement
+                // Mouse movement with enhanced tracking
                 document.addEventListener('mousemove', (e) => {
-                    this.handleCursorMove(e.clientX, e.clientY);
+                    if (!this.isTouch) {
+                        this.handleCursorMove(e.clientX, e.clientY);
+                    }
                 });
                 
-                // Touch support for mobile
+                // Enhanced touch support
                 document.addEventListener('touchmove', (e) => {
                     e.preventDefault();
                     const touch = e.touches[0];
                     this.handleCursorMove(touch.clientX, touch.clientY);
+                    this.isTouch = true;
                 }, { passive: false });
                 
                 document.addEventListener('touchstart', (e) => {
                     const touch = e.touches[0];
                     this.handleCursorMove(touch.clientX, touch.clientY);
+                    this.isTouch = true;
                 });
                 
-                // Click interaction
-                this.bird.addEventListener('click', (e) => {
+                // Enhanced click interaction with larger hitbox
+                this.container.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.handleClick();
+                });
+                
+                // Hover effects
+                this.container.addEventListener('mouseenter', () => {
+                    if (!this.isMobile) {
+                        this.container.style.transform += ' scale(1.05)';
+                    }
+                });
+                
+                this.container.addEventListener('mouseleave', () => {
+                    if (!this.isMobile) {
+                        this.container.style.transform = this.container.style.transform.replace(' scale(1.05)', '');
+                    }
                 });
                 
                 // Window resize
                 window.addEventListener('resize', () => {
                     this.isMobile = window.innerWidth <= 768;
+                    this.adjustForScreenSize();
                 });
             }
             
+            adjustForScreenSize() {
+                // Keep bird within bounds on resize
+                this.x = Math.max(60, Math.min(window.innerWidth - 60, this.x));
+                this.y = Math.max(40, Math.min(window.innerHeight - 40, this.y));
+            }
+            
+            startIdleMovement() {
+                // Gentle random movement when no cursor interaction
+                setInterval(() => {
+                    if (Date.now() - this.lastMoveTime > 5000 && !this.isScared) {
+                        this.targetX += (Math.random() - 0.5) * 100;
+                        this.targetY += (Math.random() - 0.5) * 60;
+                        this.constrainToScreen();
+                    }
+                }, 8000);
+            }
+            
             handleCursorMove(mouseX, mouseY) {
+                if (this.isScared) return;
+                
                 const distance = Math.sqrt(
                     Math.pow(mouseX - this.x, 2) + Math.pow(mouseY - this.y, 2)
                 );
                 
                 if (distance < this.minDistance) {
-                    // Bird maintains distance - flies away slightly
+                    // Bird maintains distance - gentle avoidance
                     const angle = Math.atan2(this.y - mouseY, this.x - mouseX);
                     this.targetX = mouseX + Math.cos(angle) * this.hoverRadius;
                     this.targetY = mouseY + Math.sin(angle) * this.hoverRadius;
-                } else if (distance > this.hoverRadius * 2) {
+                } else if (distance > this.hoverRadius * 2.5) {
                     // Bird follows cursor when far away
-                    this.targetX = mouseX + (Math.random() - 0.5) * 60;
-                    this.targetY = mouseY + (Math.random() - 0.5) * 60;
+                    const followX = mouseX + (Math.random() - 0.5) * 80;
+                    const followY = mouseY + (Math.random() - 0.5) * 60;
+                    this.targetX = followX;
+                    this.targetY = followY;
                 } else {
-                    // Bird hovers around cursor in gentle circles
-                    this.hoverAngle += 0.02;
-                    const hoverDistance = this.hoverRadius * (0.8 + Math.sin(Date.now() * 0.001) * 0.2);
-                    this.targetX = mouseX + Math.cos(this.hoverAngle) * hoverDistance;
-                    this.targetY = mouseY + Math.sin(this.hoverAngle) * hoverDistance * 0.6;
+                    // Enhanced hovering with natural oscillation
+                    this.hoverAngle += this.oscillationSpeed;
+                    const dynamicRadius = this.baseHoverRadius + Math.sin(Date.now() * 0.001) * 20;
+                    
+                    this.hoverOffsetX = Math.cos(this.hoverAngle) * dynamicRadius;
+                    this.hoverOffsetY = Math.sin(this.hoverAngle * 0.7) * dynamicRadius * 0.6;
+                    
+                    this.targetX = mouseX + this.hoverOffsetX;
+                    this.targetY = mouseY + this.hoverOffsetY;
                 }
                 
+                this.constrainToScreen();
                 this.lastMoveTime = Date.now();
             }
             
+            constrainToScreen() {
+                this.targetX = Math.max(60, Math.min(window.innerWidth - 60, this.targetX));
+                this.targetY = Math.max(40, Math.min(window.innerHeight - 40, this.targetY));
+            }
+            
             animate() {
-                // Calculate movement with realistic physics
+                // Enhanced physics with momentum
                 const deltaX = this.targetX - this.x;
                 const deltaY = this.targetY - this.y;
                 const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 
-                // Apply forces with dampening
+                // Apply forces with improved dampening
                 this.velocityX += deltaX * this.followSpeed;
                 this.velocityY += deltaY * this.followSpeed;
                 
-                // Apply dampening for natural deceleration
-                this.velocityX *= this.dampening;
-                this.velocityY *= this.dampening;
+                // Natural dampening with slight randomness
+                this.velocityX *= this.dampening + (Math.random() - 0.5) * 0.02;
+                this.velocityY *= this.dampening + (Math.random() - 0.5) * 0.02;
                 
-                // Limit maximum speed
+                // Dynamic speed limiting
                 const currentSpeed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
-                if (currentSpeed > this.maxSpeed) {
-                    this.velocityX = (this.velocityX / currentSpeed) * this.maxSpeed;
-                    this.velocityY = (this.velocityY / currentSpeed) * this.maxSpeed;
+                const dynamicMaxSpeed = this.isScared ? this.maxSpeed * 2 : this.maxSpeed;
+                
+                if (currentSpeed > dynamicMaxSpeed) {
+                    this.velocityX = (this.velocityX / currentSpeed) * dynamicMaxSpeed;
+                    this.velocityY = (this.velocityY / currentSpeed) * dynamicMaxSpeed;
                 }
                 
-                // Update position
-                this.x += this.velocityX;
-                this.y += this.velocityY;
+                // Update position with micro-oscillations for realism
+                this.x += this.velocityX + Math.sin(Date.now() * 0.005) * 0.5;
+                this.y += this.velocityY + Math.cos(Date.now() * 0.003) * 0.3;
                 
                 // Update speed for animations
                 this.speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
@@ -1027,19 +1185,22 @@
                 const timeSinceMove = Date.now() - this.lastMoveTime;
                 const wasFlying = this.isFlying;
                 
-                // Determine if bird is flying or hovering
-                this.isFlying = this.speed > 1.5;
-                this.isHovering = !this.isFlying && timeSinceMove < 3000;
+                // Enhanced state detection
+                this.isFlying = this.speed > 2.5 || this.isScared;
+                this.isHovering = !this.isFlying && timeSinceMove < 4000;
                 
                 // Update CSS classes for animations
                 if (this.isFlying !== wasFlying) {
                     this.container.classList.toggle('flying', this.isFlying);
                     this.container.classList.toggle('hovering', this.isHovering && !this.isFlying);
                 }
+                
+                // Update scared state
+                this.container.classList.toggle('scared', this.isScared);
             }
             
             updatePosition() {
-                // Keep bird within screen bounds
+                // Keep bird within screen bounds with buffer
                 this.x = Math.max(60, Math.min(window.innerWidth - 60, this.x));
                 this.y = Math.max(40, Math.min(window.innerHeight - 40, this.y));
                 
@@ -1047,45 +1208,70 @@
             }
             
             updateBirdOrientation() {
-                // Calculate bird's facing direction and tilt
-                if (Math.abs(this.velocityX) > 0.5) {
+                // Enhanced bird orientation with smooth transitions
+                if (Math.abs(this.velocityX) > 0.8) {
                     const direction = this.velocityX > 0 ? 1 : -1;
-                    const tilt = Math.min(Math.abs(this.velocityX) * 3, 15) * direction;
+                    const tilt = Math.min(Math.abs(this.velocityX) * 4, 20) * direction;
+                    const bank = Math.min(Math.abs(this.velocityY) * 2, 10);
                     
                     // Smooth bird rotation based on movement
-                    this.bird.style.transform = `scaleX(${direction}) rotate(${tilt * 0.5}deg)`;
+                    this.bird.style.transform = `scaleX(${direction}) rotate(${tilt * 0.6}deg) rotateX(${bank}deg)`;
                 } else {
-                    // Gentle bobbing when stationary
-                    const bob = Math.sin(Date.now() * 0.003) * 2;
-                    this.bird.style.transform = `translateY(${bob}px)`;
+                    // Enhanced gentle bobbing when stationary
+                    const time = Date.now() * 0.003;
+                    const bob = Math.sin(time) * 1.5;
+                    const sway = Math.cos(time * 0.7) * 0.8;
+                    this.bird.style.transform = `translateY(${bob}px) rotate(${sway}deg)`;
                 }
             }
             
             handleClick() {
-                // Play bird sound
-                this.playBirdSound();
+                // Enhanced click interaction
+                this.playBirdChirp();
                 
-                // Visual feedback
-                this.container.classList.add('clicked');
+                // Visual feedback with glow
+                this.container.classList.add('clicked', 'glowing');
+                
+                // Remove classes after animation
                 setTimeout(() => {
                     this.container.classList.remove('clicked');
                 }, 600);
                 
-                // Create feather effect
+                setTimeout(() => {
+                    this.container.classList.remove('glowing');
+                }, 1000);
+                
+                // Create enhanced feather effect
                 this.createFeatherEffect();
                 
-                // Small random movement
-                this.targetX += (Math.random() - 0.5) * 100;
-                this.targetY += (Math.random() - 0.5) * 60;
+                // Excited movement
+                this.targetX += (Math.random() - 0.5) * 120;
+                this.targetY += (Math.random() - 0.5) * 80;
+                this.constrainToScreen();
+                
+                // Temporary speed boost
+                this.followSpeed *= 2;
+                setTimeout(() => {
+                    this.followSpeed /= 2;
+                }, 1500);
             }
             
             createFeatherEffect() {
-                for (let i = 0; i < 5; i++) {
+                const featherCount = this.isMobile ? 3 : 6;
+                
+                for (let i = 0; i < featherCount; i++) {
                     const feather = document.createElement('div');
                     feather.className = 'feather';
-                    feather.style.left = (this.x + Math.random() * 40 - 20) + 'px';
-                    feather.style.top = (this.y + Math.random() * 40 - 20) + 'px';
-                    feather.style.animationDelay = (Math.random() * 0.5) + 's';
+                    
+                    // Random positioning around bird
+                    feather.style.left = (this.x + Math.random() * 60 - 30) + 'px';
+                    feather.style.top = (this.y + Math.random() * 60 - 30) + 'px';
+                    feather.style.animationDelay = (Math.random() * 0.8) + 's';
+                    
+                    // Random feather colors
+                    const colors = ['#DEB887', '#F4A460', '#D2B48C', '#CD853F'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    feather.style.background = `linear-gradient(45deg, ${color}, #F5DEB3)`;
                     
                     document.body.appendChild(feather);
                     
@@ -1093,47 +1279,83 @@
                         if (feather.parentNode) {
                             feather.parentNode.removeChild(feather);
                         }
-                    }, 2000);
+                    }, 3000);
                 }
             }
             
-            playBirdSound() {
+            playBirdChirp() {
+                // Enhanced realistic bird chirp using Web Audio API
+                if (!this.audioContext) return;
+                
                 try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
+                    const now = this.audioContext.currentTime;
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    const filter = this.audioContext.createBiquadFilter();
                     
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
+                    // Connect audio nodes
+                    oscillator.connect(filter);
+                    filter.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
                     
-                    // Create realistic bird chirp
-                    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(1500, audioContext.currentTime + 0.1);
-                    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
-                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.35);
+                    // Configure filter for more natural sound
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(2000, now);
+                    filter.Q.setValueAtTime(5, now);
+                    
+                    // Create realistic bird chirp pattern
+                    oscillator.frequency.setValueAtTime(800, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+                    oscillator.frequency.exponentialRampToValueAtTime(1800, now + 0.12);
+                    oscillator.frequency.exponentialRampToValueAtTime(1000, now + 0.2);
+                    oscillator.frequency.exponentialRampToValueAtTime(1500, now + 0.3);
+                    oscillator.frequency.exponentialRampToValueAtTime(900, now + 0.45);
                     
                     oscillator.type = 'sine';
                     
-                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.4);
+                    // Natural volume envelope
+                    gainNode.gain.setValueAtTime(0, now);
+                    gainNode.gain.linearRampToValueAtTime(0.1, now + 0.02);
+                    gainNode.gain.setValueAtTime(0.1, now + 0.15);
+                    gainNode.gain.linearRampToValueAtTime(0.08, now + 0.25);
+                    gainNode.gain.linearRampToValueAtTime(0.12, now + 0.32);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
                     
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.4);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.5);
                 } catch (e) {
-                    console.log('Audio not supported');
+                    console.log('Audio playback failed:', e);
                 }
             }
             
             startScared() {
-                // Bird flies away quickly when form is wrong
-                this.targetX = Math.random() * window.innerWidth;
-                this.targetY = Math.random() * window.innerHeight * 0.5;
-                this.followSpeed = 0.15;
+                // Enhanced scared behavior
+                this.isScared = true;
+                this.container.classList.add('scared');
                 
+                // Bird flies to random corner quickly
+                const corners = [
+                    { x: 100, y: 100 },
+                    { x: window.innerWidth - 100, y: 100 },
+                    { x: window.innerWidth - 100, y: window.innerHeight - 100 },
+                    { x: 100, y: window.innerHeight - 100 }
+                ];
+                
+                const randomCorner = corners[Math.floor(Math.random() * corners.length)];
+                this.targetX = randomCorner.x;
+                this.targetY = randomCorner.y;
+                
+                // Increase movement speed temporarily
+                this.followSpeed = 0.08;
+                this.maxSpeed = 8;
+                
+                // Return to normal after a few seconds
                 setTimeout(() => {
-                    this.followSpeed = 0.05; // Return to normal speed
-                }, 2000);
+                    this.isScared = false;
+                    this.container.classList.remove('scared');
+                    this.followSpeed = 0.03;
+                    this.maxSpeed = 4;
+                }, 3000);
             }
         }
 
@@ -1147,19 +1369,28 @@
         // Initialize the realistic bird
         let realisticBird;
 
-        // Create floating particles
+        // Create enhanced floating particles
         function createParticles() {
-            for (let i = 0; i < 20; i++) {
+            const particleCount = window.innerWidth > 768 ? 25 : 15;
+            
+            for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
                 particle.style.left = Math.random() * 100 + '%';
                 particle.style.animationDelay = Math.random() * 20 + 's';
-                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                particle.style.animationDuration = (15 + Math.random() * 15) + 's';
+                
+                // Vary particle sizes and opacity for depth
+                const size = 1 + Math.random() * 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.opacity = 0.3 + Math.random() * 0.4;
+                
                 particleContainer.appendChild(particle);
             }
         }
 
-        // Form validation with bird interaction
+        // Enhanced form validation with smooth animations
         function validateAnswer() {
             const userAnswer = securityInput.value.trim();
             const correctAnswer = SECURITY_CONFIG.correctAnswer;
@@ -1169,51 +1400,69 @@
                 : userAnswer.toLowerCase() === correctAnswer.toLowerCase();
 
             if (isCorrect) {
-                // Success - bird celebration
-                console.log('correct');
-                
-                // Update UI immediately
-                submitBtn.textContent = 'Welcome ✨';
-                submitBtn.disabled = true;
-                securityInput.disabled = true;
-                errorMessage.classList.remove('show');
-                
-                // Bird celebration
-                realisticBird.handleClick();
-                
-                // Trigger shimmer
-                shimmerOverlay.classList.add('active');
-                
-                // Professional transition sequence
-                setTimeout(() => {
-                    shimmerOverlay.classList.remove('active');
-                    console.log('Transitioning to Scene 2...');
-                    // Scene transition would happen here
-                }, 3000);
-                
+                // Success sequence with enhanced feedback
+                handleCorrectAnswer();
             } else {
-                // Bird gets scared and flies away
-                realisticBird.startScared();
-                errorMessage.classList.add('show');
-                
-                // Clear and focus input
-                securityInput.value = '';
-                securityInput.focus();
-                
-                // Add red border briefly
-                securityInput.style.borderColor = 'var(--red)';
-                setTimeout(() => {
-                    securityInput.style.borderColor = '';
-                }, 2000);
-                
-                // Remove error message
-                setTimeout(() => {
-                    errorMessage.classList.remove('show');
-                }, 4000);
+                // Error sequence with enhanced feedback
+                handleIncorrectAnswer();
             }
         }
 
-        // Event listeners
+        function handleCorrectAnswer() {
+            console.log('Correct answer!');
+            
+            // Update UI with smooth transitions
+            submitBtn.innerHTML = '<span>Welcome ✨</span>';
+            submitBtn.disabled = true;
+            securityInput.disabled = true;
+            
+            // Add success styling
+            securityInput.classList.add('success');
+            securityInput.classList.remove('error');
+            errorMessage.classList.remove('show');
+            
+            // Bird celebration
+            realisticBird.handleClick();
+            
+            // Enhanced shimmer effect
+            shimmerOverlay.classList.add('active');
+            
+            // Success feedback sequence
+            setTimeout(() => {
+                console.log('Initializing transition...');
+            }, 1000);
+            
+            setTimeout(() => {
+                shimmerOverlay.classList.remove('active');
+                console.log('Transition complete - Ready for Scene 2');
+            }, 3500);
+        }
+
+        function handleIncorrectAnswer() {
+            // Bird gets scared and flies away
+            realisticBird.startScared();
+            
+            // UI feedback
+            securityInput.classList.add('error');
+            securityInput.classList.remove('success');
+            errorMessage.classList.add('show');
+            
+            // Clear input and focus
+            securityInput.value = '';
+            setTimeout(() => securityInput.focus(), 100);
+            
+            // Remove error styling
+            setTimeout(() => {
+                securityInput.classList.remove('error');
+            }, 2000);
+            
+            // Auto-hide error message
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 5000);
+        }
+
+        // Enhanced event listeners
         submitBtn.addEventListener('click', validateAnswer);
 
         securityInput.addEventListener('keypress', (e) => {
@@ -1222,30 +1471,51 @@
             }
         });
 
-        // Initialize
+        // Input feedback
+        securityInput.addEventListener('input', () => {
+            securityInput.classList.remove('error', 'success');
+            errorMessage.classList.remove('show');
+        });
+
+        // Professional initialization sequence
         document.addEventListener('DOMContentLoaded', () => {
-            createParticles();
-            realisticBird = new RealisticBird();
-            securityInput.focus();
+            // Stagger initialization for smooth loading
+            setTimeout(() => createParticles(), 200);
+            setTimeout(() => {
+                realisticBird = new RealisticBird();
+            }, 500);
             
-            // Randomize cloud animations
-            document.querySelectorAll('.cloud').forEach(cloud => {
-                const delay = Math.random() * 15;
-                cloud.style.animationDelay = `-${delay}s`;
-                
-                // Extra bobbing layer for realism
-                cloud.style.animation = `${cloud.style.animation}, cloudBob ${8 + Math.random()*4}s ease-in-out infinite`;
+            setTimeout(() => {
+                securityInput.focus();
+            }, 1200);
+            
+            // Randomize cloud animations for natural movement
+            document.querySelectorAll('.cloud').forEach((cloud, index) => {
+                const delay = Math.random() * 20;
+                cloud.style.animationDelay = `-${delay}s, -${index * 2}s`;
             });
         });
 
-        // Add professional loading sequence
+        // Enhanced loading sequence
         window.addEventListener('load', () => {
-            document.body.style.opacity = '0';
-            document.body.style.transition = 'opacity 0.8s ease';
             setTimeout(() => {
-                document.body.style.opacity = '1';
-            }, 100);
+                document.body.classList.add('loaded');
+            }, 300);
         });
+
+        // Performance optimization
+        let rafId;
+        function optimizePerformance() {
+            // Reduce animations on low-end devices
+            if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
+                document.querySelectorAll('.cloud').forEach(cloud => {
+                    cloud.style.animationDuration = parseInt(cloud.style.animationDuration) * 1.5 + 's';
+                });
+            }
+        }
+
+        // Initialize performance optimizations
+        setTimeout(optimizePerformance, 1000);
 
     </script>
 </body>
