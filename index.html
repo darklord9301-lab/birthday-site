@@ -26,27 +26,351 @@
             --shadow-light: rgba(0, 0, 0, 0.1);
         }
 
-       body {
-          font-family: 'Inter', sans-serif;
-          height: 100vh;
-          overflow: hidden;
-          background: linear-gradient(135deg, 
-              var(--sky-blue) 0%, 
-              #6BA6E8 25%, 
-              #87CEEB 55%, 
-              var(--white) 100%);
-          background-size: 200% 200%;
-          animation: skyDrift 40s ease-in-out infinite alternate;
-          position: relative;
-      }
+        body {
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, 
+                var(--sky-blue) 0%, 
+                #6BA6E8 25%, 
+                #87CEEB 55%, 
+                var(--white) 100%);
+            background-size: 200% 200%;
+            animation: skyDrift 40s ease-in-out infinite alternate;
+            position: relative;
+            cursor: none;
+        }
 
-      @keyframes skyDrift {
-          0% { background-position: 30% 40%; background-size: 180% 180%; }
-          50% { background-position: 70% 60%; background-size: 200% 200%; }
-          100% { background-position: 40% 50%; background-size: 190% 190%; }
-      }
+        @keyframes skyDrift {
+            0% { background-position: 30% 40%; background-size: 180% 180%; }
+            50% { background-position: 70% 60%; background-size: 200% 200%; }
+            100% { background-position: 40% 50%; background-size: 190% 190%; }
+        }
 
-        /* Parallax cloud layers */
+        /* Enhanced Realistic Bird Design */
+        .bird-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 120px;
+            height: 80px;
+            pointer-events: none;
+            z-index: 100;
+            transform-origin: center;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+        }
+
+        .bird {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* Realistic Bird Body */
+        .bird-body {
+            width: 55px;
+            height: 35px;
+            background: linear-gradient(145deg, 
+                #FFE4B5 0%,     /* Light peach */
+                #F4A460 20%,    /* Sandy brown */
+                #DEB887 50%,    /* Burlywood */
+                #CD853F 80%,    /* Peru */
+                #A0522D 100%    /* Sienna */
+            );
+            border-radius: 60% 40% 50% 70%;
+            position: absolute;
+            top: 25px;
+            left: 35px;
+            transform-origin: center center;
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.4),
+                inset 0 -2px 4px rgba(0,0,0,0.2),
+                0 2px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(139, 69, 19, 0.3);
+        }
+
+        /* Realistic Head */
+        .bird-head {
+            width: 32px;
+            height: 28px;
+            background: linear-gradient(135deg, 
+                #F5DEB3 0%,     /* Wheat */
+                #DEB887 30%,    /* Burlywood */
+                #D2B48C 70%,    /* Tan */
+                #BC9A6A 100%    /* Darker tan */
+            );
+            border-radius: 50% 60% 45% 55%;
+            position: absolute;
+            top: 15px;
+            left: 55px;
+            z-index: 3;
+            box-shadow: 
+                inset 0 1px 3px rgba(255,255,255,0.5),
+                inset 0 -1px 3px rgba(0,0,0,0.2),
+                0 2px 6px rgba(0,0,0,0.25);
+            border: 1px solid rgba(139, 69, 19, 0.2);
+        }
+
+        /* Realistic Beak */
+        .bird-beak {
+            position: absolute;
+            top: 8px;
+            right: -12px;
+            width: 0;
+            height: 0;
+            border-left: 16px solid #FF8C00;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            z-index: 4;
+            filter: drop-shadow(1px 1px 3px rgba(0,0,0,0.4));
+        }
+
+        .bird-beak::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -14px;
+            width: 0;
+            height: 0;
+            border-left: 12px solid #FFB347;
+            border-top: 2px solid transparent;
+            border-bottom: 2px solid transparent;
+        }
+
+        /* Realistic Eyes */
+        .bird-eye {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 30% 30%, 
+                #FFFFFF 0%,
+                #F0F8FF 20%,
+                #000000 40%,
+                #1a1a1a 100%);
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: 
+                inset 0 1px 2px rgba(255,255,255,0.8),
+                0 1px 3px rgba(0,0,0,0.4);
+            border: 1px solid rgba(0,0,0,0.3);
+        }
+
+        .bird-eye::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            width: 3px;
+            height: 3px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            box-shadow: 0 0 2px rgba(255,255,255,0.6);
+        }
+
+        /* Realistic Wings */
+        .bird-wing {
+            position: absolute;
+            left: 10px;
+            top: 20px;
+            width: 70px;
+            height: 45px;
+            background: linear-gradient(45deg, 
+                #8B4513 0%,     /* Saddle brown */
+                #A0522D 20%,    /* Sienna */
+                #CD853F 40%,    /* Peru */
+                #DEB887 60%,    /* Burlywood */
+                #D2B48C 80%,    /* Tan */
+                #F4A460 100%    /* Sandy brown */
+            );
+            border-radius: 60% 30% 70% 80%;
+            animation: wingFlap 1.5s ease-in-out infinite;
+            transform-origin: 85% 40%;
+            z-index: 2;
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                inset 0 -2px 4px rgba(0,0,0,0.3),
+                0 3px 8px rgba(0,0,0,0.4);
+            border: 1px solid rgba(139, 69, 19, 0.4);
+        }
+
+        /* Wing feather details */
+        .bird-wing::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 15px;
+            width: 35px;
+            height: 20px;
+            background: linear-gradient(45deg, 
+                rgba(139, 69, 19, 0.6),
+                rgba(160, 82, 45, 0.4));
+            border-radius: 50% 30% 60% 70%;
+            border: 1px solid rgba(139, 69, 19, 0.3);
+        }
+
+        .bird-wing::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 25px;
+            height: 15px;
+            background: linear-gradient(45deg, 
+                rgba(205, 133, 63, 0.5),
+                rgba(222, 184, 135, 0.3));
+            border-radius: 60% 40% 50% 80%;
+        }
+
+        /* Realistic Tail */
+        .bird-tail {
+            position: absolute;
+            left: -15px;
+            top: 30px;
+            width: 35px;
+            height: 25px;
+            background: linear-gradient(135deg, 
+                #8B4513 0%,
+                #A0522D 30%,
+                #CD853F 70%,
+                #DEB887 100%);
+            border-radius: 80% 20% 60% 90%;
+            transform-origin: 90% 50%;
+            z-index: 1;
+            box-shadow: 
+                inset 0 1px 3px rgba(255,255,255,0.3),
+                inset 0 -1px 3px rgba(0,0,0,0.3),
+                0 2px 6px rgba(0,0,0,0.3);
+            animation: tailSway 2.5s ease-in-out infinite;
+        }
+
+        /* Realistic Legs */
+        .bird-legs {
+            position: absolute;
+            bottom: -8px;
+            left: 45px;
+            width: 20px;
+            height: 12px;
+            z-index: 1;
+        }
+
+        .bird-leg {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background: linear-gradient(to bottom, #FF8C00, #FF6347);
+            border-radius: 1px;
+        }
+
+        .bird-leg:first-child {
+            left: 6px;
+            transform: rotate(-10deg);
+        }
+
+        .bird-leg:last-child {
+            left: 12px;
+            transform: rotate(10deg);
+        }
+
+        .bird-leg::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: -2px;
+            width: 6px;
+            height: 2px;
+            background: #FF6347;
+            border-radius: 50%;
+        }
+
+        /* Natural Wing Animation */
+        @keyframes wingFlap {
+            0%, 100% { 
+                transform: rotate(-8deg) scaleY(1);
+            }
+            25% { 
+                transform: rotate(-25deg) scaleY(0.9);
+            }
+            50% { 
+                transform: rotate(-35deg) scaleY(0.8);
+            }
+            75% { 
+                transform: rotate(-25deg) scaleY(0.9);
+            }
+        }
+
+        @keyframes wingFlapFast {
+            0%, 100% { 
+                transform: rotate(-8deg) scaleY(1);
+            }
+            50% { 
+                transform: rotate(-40deg) scaleY(0.7);
+            }
+        }
+
+        @keyframes tailSway {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(8deg); }
+        }
+
+        /* Bird Movement States */
+        .bird-container.flying .bird-wing {
+            animation: wingFlapFast 0.8s ease-in-out infinite;
+        }
+
+        .bird-container.hovering .bird-body,
+        .bird-container.hovering .bird-head {
+            animation: gentleBob 3s ease-in-out infinite;
+        }
+
+        @keyframes gentleBob {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-3px) rotate(1deg); }
+        }
+
+        /* Bird Click Interaction */
+        .bird-container.clicked {
+            animation: birdExcite 0.6s ease-out;
+        }
+
+        @keyframes birdExcite {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            50% { transform: scale(1.15) rotate(5deg); }
+            75% { transform: scale(1.05) rotate(-2deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* Feather particle effects */
+        .feather {
+            position: absolute;
+            width: 8px;
+            height: 3px;
+            background: linear-gradient(45deg, #DEB887, #F4A460);
+            border-radius: 50% 10%;
+            pointer-events: none;
+            z-index: 150;
+            animation: featherFloat 2s ease-out forwards;
+        }
+
+        @keyframes featherFloat {
+            0% { 
+                opacity: 0.8; 
+                transform: scale(1) rotate(0deg) translateY(0px);
+            }
+            50% { 
+                opacity: 0.6; 
+                transform: scale(0.8) rotate(180deg) translateY(-20px);
+            }
+            100% { 
+                opacity: 0; 
+                transform: scale(0.3) rotate(360deg) translateY(-40px);
+            }
+        }
+
+        /* Cloud layers */
         .cloud-layer {
             position: absolute;
             width: 100%;
@@ -165,7 +489,7 @@
             right: 12px;
         }
 
-       @keyframes floatSlow {
+        @keyframes floatSlow {
             0% { transform: translateX(-200px) translateY(0); }
             50% { transform: translateX(50vw) translateY(-8px); }
             100% { transform: translateX(calc(100vw + 200px)) translateY(0); }
@@ -182,10 +506,8 @@
             50% { transform: translateY(-6px); }
         }
 
-        /* Add subtle transparency by depth */
-        .cloud1, .cloud3 { opacity: 0.9; }   /* foreground */
-        .cloud2, .cloud4 { opacity: 0.7; }   /* background */
-
+        .cloud1, .cloud3 { opacity: 0.9; }
+        .cloud2, .cloud4 { opacity: 0.7; }
 
         /* Main container with glassmorphism */
         .container {
@@ -210,6 +532,7 @@
             max-width: 500px;
             width: 100%;
             transition: all 0.3s ease;
+            pointer-events: auto;
         }
 
         .main-panel:hover {
@@ -217,71 +540,6 @@
             transform: translateY(-2px);
             box-shadow: 0 32px 64px rgba(0, 0, 0, 0.15);
         }
-
-        /* Professional bird design */
-        .bird-container {
-            margin-bottom: 2.5rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: inline-block;
-        }
-
-        .bird-container:hover {
-            transform: scale(1.05) translateY(-4px);
-            filter: drop-shadow(0 16px 32px rgba(0,0,0,0.2));
-        }
-
-        .bird {
-            position: absolute;
-            top: 50%;
-            left: 10%;
-            width: 60px;
-            height: 60px;
-            transform: translate(-50%, -50%);
-            pointer-events: none; /* prevent blocking mouse */
-          }
-
-          .bird-body {
-            width: 60px;
-            height: 40px;
-            background: white;
-            border-radius: 50% 50% 40% 40%;
-            position: relative;
-            box-shadow: 0 0 8px rgba(255,255,255,0.6);
-            transition: transform 0.2s ease;
-          }
-
-          /* Eye */
-          .eye {
-            position: absolute;
-            top: 12px;
-            left: 40px;
-            width: 10px;
-            height: 10px;
-            background: black;
-            border-radius: 50%;
-            transition: transform 0.1s linear;
-          }
-
-          /* Wing */
-          .wing {
-            position: absolute;
-            left: -10px;
-            top: 8px;
-            width: 50px;
-            height: 30px;
-            background: white;
-            border-radius: 50%;
-            animation: flap 0.8s ease-in-out infinite;
-            transform-origin: top right;
-            box-shadow: 0 0 6px rgba(255,255,255,0.4);
-          }
-
-          @keyframes flap {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-30deg); }
-          }
-
 
         /* Typography */
         .brand-title {
@@ -473,38 +731,7 @@
             }
         }
 
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .main-panel {
-                margin: 1rem;
-                padding: 2rem 1.5rem;
-            }
-            
-            .brand-title {
-                font-size: 1.8rem;
-            }
-            
-            .security-input {
-                width: 100%;
-                font-size: 0.95rem;
-            }
-            
-            .submit-btn {
-                width: 100%;
-            }
-            
-            .bird {
-                width: 120px;
-                height: 100px;
-            }
-            
-            .bird-body {
-                width: 75px;
-                height: 58px;
-            }
-        }
-
-        /* Additional professional touches */
+        /* Floating particles background */
         .floating-particles {
             position: absolute;
             width: 100%;
@@ -534,6 +761,64 @@
                 opacity: 0;
             }
         }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .main-panel {
+                margin: 1rem;
+                padding: 2rem 1.5rem;
+            }
+            
+            .brand-title {
+                font-size: 1.8rem;
+            }
+            
+            .security-input {
+                width: 100%;
+                font-size: 0.95rem;
+            }
+            
+            .submit-btn {
+                width: 100%;
+            }
+            
+            .bird-container {
+                width: 90px;
+                height: 60px;
+            }
+            
+            .bird-body {
+                width: 40px;
+                height: 25px;
+            }
+            
+            .bird-head {
+                width: 24px;
+                height: 20px;
+            }
+            
+            .bird-wing {
+                width: 50px;
+                height: 32px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .bird-container {
+                width: 75px;
+                height: 50px;
+            }
+            
+            .bird-body {
+                width: 35px;
+                height: 22px;
+            }
+            
+            .bird-head {
+                width: 20px;
+                height: 18px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -551,21 +836,28 @@
     <!-- Shimmer overlay -->
     <div class="shimmer-overlay" id="shimmerOverlay"></div>
 
+    <!-- Realistic Beautiful Bird -->
+    <div class="bird-container hovering" id="birdContainer">
+        <div class="bird" id="bird">
+            <div class="bird-tail"></div>
+            <div class="bird-body"></div>
+            <div class="bird-head">
+                <div class="bird-beak"></div>
+                <div class="bird-eye"></div>
+            </div>
+            <div class="bird-wing"></div>
+            <div class="bird-legs">
+                <div class="bird-leg"></div>
+                <div class="bird-leg"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="main-panel">
             <!-- Branding -->
             <h1 class="brand-title">Surprise...!!</h1>
             <p class="subtitle">Only for you, my queen....!</p>
-
-            <!-- Bird character -->
-            <div class="bird-container" id="birdContainer">
-                <div class="bird">
-                    <div class="bird-body">
-                       <div class="eye"></div>
-                       <div class="wing"></div>
-                    </div>
-                 </div>
-            </div>
 
             <!-- Security question form -->
             <div class="question-text">Answer the question to enter!✨</div>
@@ -597,17 +889,263 @@
             caseSensitive: false
         };
 
+        // Enhanced Realistic Bird System
+        class RealisticBird {
+            constructor() {
+                this.container = document.getElementById('birdContainer');
+                this.bird = document.getElementById('bird');
+                
+                // Physics properties
+                this.x = window.innerWidth / 2;
+                this.y = window.innerHeight / 2;
+                this.targetX = this.x;
+                this.targetY = this.y;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.speed = 0;
+                this.maxSpeed = 6;
+                
+                // Movement properties
+                this.followSpeed = 0.05; // Slower, more natural following
+                this.dampening = 0.92; // Natural momentum dampening
+                this.minDistance = 80; // Minimum distance to maintain from cursor
+                this.hoverRadius = 100; // Radius around cursor where bird hovers
+                
+                // Animation states
+                this.isFlying = false;
+                this.isHovering = true;
+                this.lastMoveTime = Date.now();
+                this.hoverOffset = { x: 0, y: 0 };
+                this.hoverAngle = 0;
+                
+                // Mobile detection
+                this.isMobile = window.innerWidth <= 768;
+                
+                this.init();
+            }
+            
+            init() {
+                this.updatePosition();
+                this.setupEventListeners();
+                this.animate();
+            }
+            
+            setupEventListeners() {
+                // Mouse movement
+                document.addEventListener('mousemove', (e) => {
+                    this.handleCursorMove(e.clientX, e.clientY);
+                });
+                
+                // Touch support for mobile
+                document.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.handleCursorMove(touch.clientX, touch.clientY);
+                }, { passive: false });
+                
+                document.addEventListener('touchstart', (e) => {
+                    const touch = e.touches[0];
+                    this.handleCursorMove(touch.clientX, touch.clientY);
+                });
+                
+                // Click interaction
+                this.bird.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.handleClick();
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.isMobile = window.innerWidth <= 768;
+                });
+            }
+            
+            handleCursorMove(mouseX, mouseY) {
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - this.x, 2) + Math.pow(mouseY - this.y, 2)
+                );
+                
+                if (distance < this.minDistance) {
+                    // Bird maintains distance - flies away slightly
+                    const angle = Math.atan2(this.y - mouseY, this.x - mouseX);
+                    this.targetX = mouseX + Math.cos(angle) * this.hoverRadius;
+                    this.targetY = mouseY + Math.sin(angle) * this.hoverRadius;
+                } else if (distance > this.hoverRadius * 2) {
+                    // Bird follows cursor when far away
+                    this.targetX = mouseX + (Math.random() - 0.5) * 60;
+                    this.targetY = mouseY + (Math.random() - 0.5) * 60;
+                } else {
+                    // Bird hovers around cursor in gentle circles
+                    this.hoverAngle += 0.02;
+                    const hoverDistance = this.hoverRadius * (0.8 + Math.sin(Date.now() * 0.001) * 0.2);
+                    this.targetX = mouseX + Math.cos(this.hoverAngle) * hoverDistance;
+                    this.targetY = mouseY + Math.sin(this.hoverAngle) * hoverDistance * 0.6;
+                }
+                
+                this.lastMoveTime = Date.now();
+            }
+            
+            animate() {
+                // Calculate movement with realistic physics
+                const deltaX = this.targetX - this.x;
+                const deltaY = this.targetY - this.y;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                // Apply forces with dampening
+                this.velocityX += deltaX * this.followSpeed;
+                this.velocityY += deltaY * this.followSpeed;
+                
+                // Apply dampening for natural deceleration
+                this.velocityX *= this.dampening;
+                this.velocityY *= this.dampening;
+                
+                // Limit maximum speed
+                const currentSpeed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+                if (currentSpeed > this.maxSpeed) {
+                    this.velocityX = (this.velocityX / currentSpeed) * this.maxSpeed;
+                    this.velocityY = (this.velocityY / currentSpeed) * this.maxSpeed;
+                }
+                
+                // Update position
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+                
+                // Update speed for animations
+                this.speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+                
+                // Update animation states
+                this.updateAnimationStates();
+                
+                // Apply position and transformations
+                this.updatePosition();
+                this.updateBirdOrientation();
+                
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            updateAnimationStates() {
+                const timeSinceMove = Date.now() - this.lastMoveTime;
+                const wasFlying = this.isFlying;
+                
+                // Determine if bird is flying or hovering
+                this.isFlying = this.speed > 1.5;
+                this.isHovering = !this.isFlying && timeSinceMove < 3000;
+                
+                // Update CSS classes for animations
+                if (this.isFlying !== wasFlying) {
+                    this.container.classList.toggle('flying', this.isFlying);
+                    this.container.classList.toggle('hovering', this.isHovering && !this.isFlying);
+                }
+            }
+            
+            updatePosition() {
+                // Keep bird within screen bounds
+                this.x = Math.max(60, Math.min(window.innerWidth - 60, this.x));
+                this.y = Math.max(40, Math.min(window.innerHeight - 40, this.y));
+                
+                this.container.style.transform = `translate(${this.x}px, ${this.y}px)`;
+            }
+            
+            updateBirdOrientation() {
+                // Calculate bird's facing direction and tilt
+                if (Math.abs(this.velocityX) > 0.5) {
+                    const direction = this.velocityX > 0 ? 1 : -1;
+                    const tilt = Math.min(Math.abs(this.velocityX) * 3, 15) * direction;
+                    
+                    // Smooth bird rotation based on movement
+                    this.bird.style.transform = `scaleX(${direction}) rotate(${tilt * 0.5}deg)`;
+                } else {
+                    // Gentle bobbing when stationary
+                    const bob = Math.sin(Date.now() * 0.003) * 2;
+                    this.bird.style.transform = `translateY(${bob}px)`;
+                }
+            }
+            
+            handleClick() {
+                // Play bird sound
+                this.playBirdSound();
+                
+                // Visual feedback
+                this.container.classList.add('clicked');
+                setTimeout(() => {
+                    this.container.classList.remove('clicked');
+                }, 600);
+                
+                // Create feather effect
+                this.createFeatherEffect();
+                
+                // Small random movement
+                this.targetX += (Math.random() - 0.5) * 100;
+                this.targetY += (Math.random() - 0.5) * 60;
+            }
+            
+            createFeatherEffect() {
+                for (let i = 0; i < 5; i++) {
+                    const feather = document.createElement('div');
+                    feather.className = 'feather';
+                    feather.style.left = (this.x + Math.random() * 40 - 20) + 'px';
+                    feather.style.top = (this.y + Math.random() * 40 - 20) + 'px';
+                    feather.style.animationDelay = (Math.random() * 0.5) + 's';
+                    
+                    document.body.appendChild(feather);
+                    
+                    setTimeout(() => {
+                        if (feather.parentNode) {
+                            feather.parentNode.removeChild(feather);
+                        }
+                    }, 2000);
+                }
+            }
+            
+            playBirdSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    // Create realistic bird chirp
+                    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1500, audioContext.currentTime + 0.1);
+                    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.35);
+                    
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.4);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.4);
+                } catch (e) {
+                    console.log('Audio not supported');
+                }
+            }
+            
+            startScared() {
+                // Bird flies away quickly when form is wrong
+                this.targetX = Math.random() * window.innerWidth;
+                this.targetY = Math.random() * window.innerHeight * 0.5;
+                this.followSpeed = 0.15;
+                
+                setTimeout(() => {
+                    this.followSpeed = 0.05; // Return to normal speed
+                }, 2000);
+            }
+        }
+
         // Elements
-        const bird = document.getElementById('bird');
-        const birdContainer = document.getElementById('birdContainer');
         const securityInput = document.getElementById('securityInput');
         const submitBtn = document.getElementById('submitBtn');
         const errorMessage = document.getElementById('errorMessage');
         const shimmerOverlay = document.getElementById('shimmerOverlay');
         const particleContainer = document.getElementById('particleContainer');
 
-        // Set the question placeholder
-        securityInput.placeholder = SECURITY_CONFIG.question;
+        // Initialize the realistic bird
+        let realisticBird;
 
         // Create floating particles
         function createParticles() {
@@ -621,50 +1159,7 @@
             }
         }
 
-        // Enhanced bird chirp sound
-        function playChirpSound() {
-            const audio = new Audio('assets/sounds/bird-chirp.mp3');
-            audio.volume = 0.2;
-            audio.play().catch(e => {
-                // Professional beep fallback
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // Create a pleasant chirp-like sound
-                oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(1500, audioContext.currentTime + 0.1);
-                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.25);
-                
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.3);
-            });
-        }
-
-        // Enhanced bird interaction
-        birdContainer.addEventListener('click', () => {
-            playChirpSound();
-            
-            // Professional click animation
-            birdContainer.style.transform = 'scale(0.98) translateY(-2px)';
-            setTimeout(() => {
-                birdContainer.style.transform = 'scale(1.05) translateY(-4px)';
-            }, 100);
-            setTimeout(() => {
-                birdContainer.style.transform = 'scale(1) translateY(0)';
-            }, 300);
-        });
-
-        // Form validation with professional feedback
+        // Form validation with bird interaction
         function validateAnswer() {
             const userAnswer = securityInput.value.trim();
             const correctAnswer = SECURITY_CONFIG.correctAnswer;
@@ -674,7 +1169,7 @@
                 : userAnswer.toLowerCase() === correctAnswer.toLowerCase();
 
             if (isCorrect) {
-                // Success - professional shimmer effect
+                // Success - bird celebration
                 console.log('correct');
                 
                 // Update UI immediately
@@ -682,6 +1177,9 @@
                 submitBtn.disabled = true;
                 securityInput.disabled = true;
                 errorMessage.classList.remove('show');
+                
+                // Bird celebration
+                realisticBird.handleClick();
                 
                 // Trigger shimmer
                 shimmerOverlay.classList.add('active');
@@ -694,8 +1192,8 @@
                 }, 3000);
                 
             } else {
-                // Professional error handling
-                bird.classList.add('shake');
+                // Bird gets scared and flies away
+                realisticBird.startScared();
                 errorMessage.classList.add('show');
                 
                 // Clear and focus input
@@ -708,11 +1206,7 @@
                     securityInput.style.borderColor = '';
                 }, 2000);
                 
-                // Remove animations
-                setTimeout(() => {
-                    bird.classList.remove('shake');
-                }, 600);
-                
+                // Remove error message
                 setTimeout(() => {
                     errorMessage.classList.remove('show');
                 }, 4000);
@@ -731,15 +1225,16 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             createParticles();
+            realisticBird = new RealisticBird();
             securityInput.focus();
             
             // Randomize cloud animations
             document.querySelectorAll('.cloud').forEach(cloud => {
-            const delay = Math.random() * 15;
-            cloud.style.animationDelay = `-${delay}s`;
-
-            // Extra bobbing layer for realism
-            cloud.style.animation = `${cloud.style.animation}, cloudBob ${8 + Math.random()*4}s ease-in-out infinite`;
+                const delay = Math.random() * 15;
+                cloud.style.animationDelay = `-${delay}s`;
+                
+                // Extra bobbing layer for realism
+                cloud.style.animation = `${cloud.style.animation}, cloudBob ${8 + Math.random()*4}s ease-in-out infinite`;
             });
         });
 
@@ -751,45 +1246,6 @@
                 document.body.style.opacity = '1';
             }, 100);
         });
-
-        const bird = document.querySelector('.bird');
-        const birdBody = document.querySelector('.bird-body');
-        const eye = document.querySelector('.eye');
-
-        let birdX = window.innerWidth / 2;
-        let birdY = window.innerHeight / 2;
-        let targetX = birdX;
-        let targetY = birdY;
-
-        // Follow cursor like food
-        document.addEventListener('mousemove', e => {
-          targetX = e.clientX;
-          targetY = e.clientY;
-        });
-
-        function animateBird() {
-          // Smoothly move bird towards cursor
-          birdX += (targetX - birdX) * 0.05;
-          birdY += (targetY - birdY) * 0.05;
-
-          bird.style.transform = `translate(${birdX}px, ${birdY}px)`;
-
-          // Tilt bird depending on movement
-          let angle = (targetX - birdX) * 0.02;
-          birdBody.style.transform = `rotate(${angle}deg)`;
-
-          // Eye follows cursor
-          let dx = targetX - birdX;
-          let dy = targetY - birdY;
-          let dist = Math.sqrt(dx*dx + dy*dy);
-          let eyeOffsetX = (dx / dist) * 3;
-          let eyeOffsetY = (dy / dist) * 3;
-          eye.style.transform = `translate(${eyeOffsetX}px, ${eyeOffsetY}px)`;
-
-          requestAnimationFrame(animateBird);
-        }
-
-        animateBird();
 
     </script>
 </body>
