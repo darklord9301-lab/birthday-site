@@ -58,6 +58,7 @@
             z-index: 100;
             transform-origin: center;
             filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .bird {
@@ -65,6 +66,7 @@
             width: 100%;
             height: 100%;
             cursor: pointer;
+            pointer-events: all;
         }
 
         /* Realistic Bird Body */
@@ -186,7 +188,7 @@
                 #F4A460 100%    /* Sandy brown */
             );
             border-radius: 60% 30% 70% 80%;
-            animation: wingFlap 1.5s ease-in-out infinite;
+            animation: wingFlap 2s ease-in-out infinite;
             transform-origin: 85% 40%;
             z-index: 2;
             box-shadow: 
@@ -243,7 +245,7 @@
                 inset 0 1px 3px rgba(255,255,255,0.3),
                 inset 0 -1px 3px rgba(0,0,0,0.3),
                 0 2px 6px rgba(0,0,0,0.3);
-            animation: tailSway 2.5s ease-in-out infinite;
+            animation: tailSway 3s ease-in-out infinite;
         }
 
         /* Realistic Legs */
@@ -285,19 +287,19 @@
             border-radius: 50%;
         }
 
-        /* Natural Wing Animation */
+        /* Enhanced Wing Animations */
         @keyframes wingFlap {
             0%, 100% { 
                 transform: rotate(-8deg) scaleY(1);
             }
             25% { 
-                transform: rotate(-25deg) scaleY(0.9);
+                transform: rotate(-18deg) scaleY(0.95);
             }
             50% { 
-                transform: rotate(-35deg) scaleY(0.8);
+                transform: rotate(-30deg) scaleY(0.85);
             }
             75% { 
-                transform: rotate(-25deg) scaleY(0.9);
+                transform: rotate(-18deg) scaleY(0.95);
             }
         }
 
@@ -306,40 +308,84 @@
                 transform: rotate(-8deg) scaleY(1);
             }
             50% { 
-                transform: rotate(-40deg) scaleY(0.7);
+                transform: rotate(-45deg) scaleY(0.7);
+            }
+        }
+
+        @keyframes wingFlapSlow {
+            0%, 100% { 
+                transform: rotate(-5deg) scaleY(1);
+            }
+            50% { 
+                transform: rotate(-20deg) scaleY(0.9);
             }
         }
 
         @keyframes tailSway {
-            0%, 100% { transform: rotate(-2deg); }
-            50% { transform: rotate(8deg); }
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(10deg); }
+        }
+
+        @keyframes tailSwayFast {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(15deg); }
         }
 
         /* Bird Movement States */
         .bird-container.flying .bird-wing {
-            animation: wingFlapFast 0.8s ease-in-out infinite;
+            animation: wingFlapFast 0.4s ease-in-out infinite;
+        }
+
+        .bird-container.flying .bird-tail {
+            animation: tailSwayFast 0.8s ease-in-out infinite;
+        }
+
+        .bird-container.gliding .bird-wing {
+            animation: wingFlapSlow 3s ease-in-out infinite;
         }
 
         .bird-container.hovering .bird-body,
         .bird-container.hovering .bird-head {
-            animation: gentleBob 3s ease-in-out infinite;
+            animation: gentleBob 4s ease-in-out infinite;
+        }
+
+        .bird-container.hovering .bird-wing {
+            animation: wingFlap 2.5s ease-in-out infinite;
         }
 
         @keyframes gentleBob {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-3px) rotate(1deg); }
+            25% { transform: translateY(-2px) rotate(0.5deg); }
+            75% { transform: translateY(-1px) rotate(-0.5deg); }
         }
 
         /* Bird Click Interaction */
         .bird-container.clicked {
-            animation: birdExcite 0.6s ease-out;
+            animation: birdExcite 0.8s ease-out;
         }
 
         @keyframes birdExcite {
             0% { transform: scale(1) rotate(0deg); }
-            25% { transform: scale(1.1) rotate(-5deg); }
-            50% { transform: scale(1.15) rotate(5deg); }
-            75% { transform: scale(1.05) rotate(-2deg); }
+            15% { transform: scale(1.1) rotate(-8deg); }
+            30% { transform: scale(1.15) rotate(8deg); }
+            45% { transform: scale(1.12) rotate(-5deg); }
+            60% { transform: scale(1.08) rotate(3deg); }
+            80% { transform: scale(1.03) rotate(-1deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* Enhanced scared animation */
+        .bird-container.scared {
+            animation: birdScared 1.2s ease-out;
+        }
+
+        @keyframes birdScared {
+            0% { transform: scale(1) rotate(0deg); }
+            10% { transform: scale(1.2) rotate(-15deg); }
+            20% { transform: scale(1.15) rotate(12deg); }
+            30% { transform: scale(1.25) rotate(-10deg); }
+            50% { transform: scale(1.1) rotate(8deg); }
+            70% { transform: scale(1.05) rotate(-3deg); }
             100% { transform: scale(1) rotate(0deg); }
         }
 
@@ -352,21 +398,29 @@
             border-radius: 50% 10%;
             pointer-events: none;
             z-index: 150;
-            animation: featherFloat 2s ease-out forwards;
+            animation: featherFloat 3s ease-out forwards;
         }
 
         @keyframes featherFloat {
             0% { 
+                opacity: 0.9; 
+                transform: scale(1) rotate(0deg) translateY(0px) translateX(0px);
+            }
+            25% { 
                 opacity: 0.8; 
-                transform: scale(1) rotate(0deg) translateY(0px);
+                transform: scale(0.9) rotate(90deg) translateY(-15px) translateX(10px);
             }
             50% { 
                 opacity: 0.6; 
-                transform: scale(0.8) rotate(180deg) translateY(-20px);
+                transform: scale(0.7) rotate(180deg) translateY(-25px) translateX(-5px);
+            }
+            75% { 
+                opacity: 0.3; 
+                transform: scale(0.5) rotate(270deg) translateY(-35px) translateX(15px);
             }
             100% { 
                 opacity: 0; 
-                transform: scale(0.3) rotate(360deg) translateY(-40px);
+                transform: scale(0.2) rotate(360deg) translateY(-50px) translateX(-10px);
             }
         }
 
@@ -822,6 +876,13 @@
     </style>
 </head>
 <body>
+    <!-- Audio element for bird chirping -->
+    <audio id="birdChirpSound" preload="auto">
+        <source src="bird-chirp.mp3" type="audio/mpeg">
+        <!-- Fallback for browsers that don't support the audio format -->
+        Your browser does not support the audio element.
+    </audio>
+
     <!-- Floating particles background -->
     <div class="floating-particles" id="particleContainer"></div>
 
@@ -889,34 +950,42 @@
             caseSensitive: false
         };
 
-        // Enhanced Realistic Bird System
+        // Enhanced Realistic Bird System with improved physics
         class RealisticBird {
             constructor() {
                 this.container = document.getElementById('birdContainer');
                 this.bird = document.getElementById('bird');
+                this.audioElement = document.getElementById('birdChirpSound');
                 
-                // Physics properties
-                this.x = window.innerWidth / 2;
-                this.y = window.innerHeight / 2;
-                this.targetX = this.x;
-                this.targetY = this.y;
-                this.velocityX = 0;
-                this.velocityY = 0;
-                this.speed = 0;
-                this.maxSpeed = 6;
+                // Enhanced physics properties
+                this.position = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+                this.velocity = { x: 0, y: 0 };
+                this.target = { x: this.position.x, y: this.position.y };
+                this.acceleration = { x: 0, y: 0 };
                 
-                // Movement properties
-                this.followSpeed = 0.05; // Slower, more natural following
-                this.dampening = 0.92; // Natural momentum dampening
-                this.minDistance = 80; // Minimum distance to maintain from cursor
-                this.hoverRadius = 100; // Radius around cursor where bird hovers
+                // Enhanced movement properties
+                this.maxSpeed = 8;
+                this.maxForce = 0.3;
+                this.arrivalRadius = 50;
+                this.separationRadius = 120;
+                this.wanderRadius = 80;
+                
+                // Natural behavior properties
+                this.energy = 1.0;
+                this.restTime = 0;
+                this.wanderAngle = Math.random() * Math.PI * 2;
+                this.perchTime = 0;
+                this.isPerching = false;
                 
                 // Animation states
-                this.isFlying = false;
-                this.isHovering = true;
-                this.lastMoveTime = Date.now();
-                this.hoverOffset = { x: 0, y: 0 };
-                this.hoverAngle = 0;
+                this.behaviorState = 'hovering'; // hovering, following, wandering, scared, excited
+                this.lastStateChange = Date.now();
+                this.stateMinDuration = 2000;
+                
+                // Interaction properties
+                this.clickCount = 0;
+                this.lastClickTime = 0;
+                this.trustLevel = 0.5; // 0-1, affects how close bird gets
                 
                 // Mobile detection
                 this.isMobile = window.innerWidth <= 768;
@@ -928,15 +997,20 @@
                 this.updatePosition();
                 this.setupEventListeners();
                 this.animate();
+                
+                // Start with gentle wandering
+                setTimeout(() => {
+                    this.setState('wandering');
+                }, 1000);
             }
             
             setupEventListeners() {
-                // Mouse movement
+                // Enhanced cursor tracking
                 document.addEventListener('mousemove', (e) => {
                     this.handleCursorMove(e.clientX, e.clientY);
                 });
                 
-                // Touch support for mobile
+                // Improved touch support
                 document.addEventListener('touchmove', (e) => {
                     e.preventDefault();
                     const touch = e.touches[0];
@@ -948,156 +1022,340 @@
                     this.handleCursorMove(touch.clientX, touch.clientY);
                 });
                 
-                // Click interaction
+                // Enhanced click interaction
                 this.bird.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.handleClick();
                 });
                 
-                // Window resize
+                // Window events
                 window.addEventListener('resize', () => {
                     this.isMobile = window.innerWidth <= 768;
+                    this.constrainToBounds();
+                });
+                
+                // Page visibility for energy management
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        this.energy = Math.max(0.3, this.energy - 0.2);
+                    } else {
+                        this.energy = Math.min(1.0, this.energy + 0.3);
+                    }
                 });
             }
             
             handleCursorMove(mouseX, mouseY) {
-                const distance = Math.sqrt(
-                    Math.pow(mouseX - this.x, 2) + Math.pow(mouseY - this.y, 2)
-                );
+                const cursorPos = { x: mouseX, y: mouseY };
+                const distance = this.getDistance(this.position, cursorPos);
+                const now = Date.now();
                 
-                if (distance < this.minDistance) {
-                    // Bird maintains distance - flies away slightly
-                    const angle = Math.atan2(this.y - mouseY, this.x - mouseX);
-                    this.targetX = mouseX + Math.cos(angle) * this.hoverRadius;
-                    this.targetY = mouseY + Math.sin(angle) * this.hoverRadius;
-                } else if (distance > this.hoverRadius * 2) {
-                    // Bird follows cursor when far away
-                    this.targetX = mouseX + (Math.random() - 0.5) * 60;
-                    this.targetY = mouseY + (Math.random() - 0.5) * 60;
-                } else {
-                    // Bird hovers around cursor in gentle circles
-                    this.hoverAngle += 0.02;
-                    const hoverDistance = this.hoverRadius * (0.8 + Math.sin(Date.now() * 0.001) * 0.2);
-                    this.targetX = mouseX + Math.cos(this.hoverAngle) * hoverDistance;
-                    this.targetY = mouseY + Math.sin(this.hoverAngle) * hoverDistance * 0.6;
+                // Update behavior based on cursor proximity and trust level
+                if (distance < this.separationRadius * (1 - this.trustLevel * 0.5)) {
+                    if (this.trustLevel > 0.7) {
+                        this.setState('following');
+                        this.target = {
+                            x: mouseX + (Math.random() - 0.5) * 60 * this.trustLevel,
+                            y: mouseY + (Math.random() - 0.5) * 40 * this.trustLevel
+                        };
+                    } else {
+                        this.setState('hovering');
+                        // Maintain comfortable distance
+                        const angle = Math.atan2(this.position.y - mouseY, this.position.x - mouseX);
+                        const comfortDistance = this.separationRadius * (1.2 - this.trustLevel * 0.4);
+                        this.target = {
+                            x: mouseX + Math.cos(angle) * comfortDistance,
+                            y: mouseY + Math.sin(angle) * comfortDistance
+                        };
+                    }
+                } else if (distance > 300) {
+                    // Return to wandering when cursor is far
+                    if (now - this.lastStateChange > this.stateMinDuration) {
+                        this.setState('wandering');
+                    }
                 }
                 
-                this.lastMoveTime = Date.now();
+                this.lastCursorMove = now;
+            }
+            
+            setState(newState) {
+                if (newState !== this.behaviorState) {
+                    this.behaviorState = newState;
+                    this.lastStateChange = Date.now();
+                    this.updateVisualState();
+                }
+            }
+            
+            updateVisualState() {
+                // Remove all state classes
+                this.container.classList.remove('flying', 'hovering', 'gliding', 'scared', 'clicked');
+                
+                // Add current state class
+                switch (this.behaviorState) {
+                    case 'following':
+                    case 'scared':
+                        this.container.classList.add('flying');
+                        break;
+                    case 'wandering':
+                        this.container.classList.add('gliding');
+                        break;
+                    case 'excited':
+                        this.container.classList.add('clicked');
+                        break;
+                    default:
+                        this.container.classList.add('hovering');
+                }
             }
             
             animate() {
-                // Calculate movement with realistic physics
-                const deltaX = this.targetX - this.x;
-                const deltaY = this.targetY - this.y;
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const now = Date.now();
+                const deltaTime = Math.min(now - (this.lastFrameTime || now), 50) / 1000;
+                this.lastFrameTime = now;
                 
-                // Apply forces with dampening
-                this.velocityX += deltaX * this.followSpeed;
-                this.velocityY += deltaY * this.followSpeed;
+                // Update behavior
+                this.updateBehavior(deltaTime);
                 
-                // Apply dampening for natural deceleration
-                this.velocityX *= this.dampening;
-                this.velocityY *= this.dampening;
+                // Apply physics
+                this.applyForces(deltaTime);
                 
-                // Limit maximum speed
-                const currentSpeed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
-                if (currentSpeed > this.maxSpeed) {
-                    this.velocityX = (this.velocityX / currentSpeed) * this.maxSpeed;
-                    this.velocityY = (this.velocityY / currentSpeed) * this.maxSpeed;
-                }
-                
-                // Update position
-                this.x += this.velocityX;
-                this.y += this.velocityY;
-                
-                // Update speed for animations
-                this.speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
-                
-                // Update animation states
-                this.updateAnimationStates();
-                
-                // Apply position and transformations
+                // Update position and visuals
                 this.updatePosition();
-                this.updateBirdOrientation();
+                this.updateOrientation();
+                
+                // Manage energy
+                this.updateEnergy(deltaTime);
                 
                 requestAnimationFrame(() => this.animate());
             }
             
-            updateAnimationStates() {
-                const timeSinceMove = Date.now() - this.lastMoveTime;
-                const wasFlying = this.isFlying;
+            updateBehavior(deltaTime) {
+                const now = Date.now();
+                const timeSinceCursor = now - (this.lastCursorMove || 0);
                 
-                // Determine if bird is flying or hovering
-                this.isFlying = this.speed > 1.5;
-                this.isHovering = !this.isFlying && timeSinceMove < 3000;
-                
-                // Update CSS classes for animations
-                if (this.isFlying !== wasFlying) {
-                    this.container.classList.toggle('flying', this.isFlying);
-                    this.container.classList.toggle('hovering', this.isHovering && !this.isFlying);
+                switch (this.behaviorState) {
+                    case 'wandering':
+                        this.wander(deltaTime);
+                        // Switch to resting occasionally
+                        if (Math.random() < 0.001) {
+                            this.setState('hovering');
+                            this.perchTime = now + 3000 + Math.random() * 2000;
+                        }
+                        break;
+                        
+                    case 'hovering':
+                        if (this.perchTime && now > this.perchTime) {
+                            this.setState('wandering');
+                            this.perchTime = 0;
+                        } else if (timeSinceCursor > 5000) {
+                            // Start wandering if no cursor interaction
+                            this.setState('wandering');
+                        }
+                        break;
+                        
+                    case 'following':
+                        if (timeSinceCursor > 3000) {
+                            this.setState('wandering');
+                        }
+                        break;
+                        
+                    case 'scared':
+                        if (now - this.lastStateChange > 2000) {
+                            this.setState('wandering');
+                        }
+                        break;
+                        
+                    case 'excited':
+                        if (now - this.lastStateChange > 800) {
+                            this.setState('hovering');
+                        }
+                        break;
                 }
+            }
+            
+            wander(deltaTime) {
+                // Enhanced wandering with more natural movement
+                this.wanderAngle += (Math.random() - 0.5) * 0.3;
+                
+                const wanderTarget = {
+                    x: this.position.x + Math.cos(this.wanderAngle) * this.wanderRadius,
+                    y: this.position.y + Math.sin(this.wanderAngle) * this.wanderRadius
+                };
+                
+                // Add some randomness and bounds checking
+                wanderTarget.x = Math.max(100, Math.min(window.innerWidth - 100, wanderTarget.x));
+                wanderTarget.y = Math.max(80, Math.min(window.innerHeight - 80, wanderTarget.y));
+                
+                // Smooth target transition
+                this.target.x += (wanderTarget.x - this.target.x) * 0.05;
+                this.target.y += (wanderTarget.y - this.target.y) * 0.05;
+            }
+            
+            applyForces(deltaTime) {
+                // Calculate steering force
+                const desired = this.seek(this.target);
+                const steer = this.limit(desired, this.maxForce);
+                
+                // Apply force
+                this.acceleration.x += steer.x;
+                this.acceleration.y += steer.y;
+                
+                // Update velocity
+                this.velocity.x += this.acceleration.x * deltaTime * 60;
+                this.velocity.y += this.acceleration.y * deltaTime * 60;
+                
+                // Apply energy-based speed limit
+                const energyMultiplier = 0.3 + this.energy * 0.7;
+                this.velocity = this.limit(this.velocity, this.maxSpeed * energyMultiplier);
+                
+                // Update position
+                this.position.x += this.velocity.x * deltaTime * 60;
+                this.position.y += this.velocity.y * deltaTime * 60;
+                
+                // Apply drag
+                this.velocity.x *= 0.98;
+                this.velocity.y *= 0.98;
+                
+                // Reset acceleration
+                this.acceleration.x = 0;
+                this.acceleration.y = 0;
+                
+                // Keep within bounds
+                this.constrainToBounds();
+            }
+            
+            seek(target) {
+                const desired = {
+                    x: target.x - this.position.x,
+                    y: target.y - this.position.y
+                };
+                
+                const distance = Math.sqrt(desired.x * desired.x + desired.y * desired.y);
+                
+                if (distance > 0) {
+                    desired.x /= distance;
+                    desired.y /= distance;
+                    
+                    // Arrival behavior
+                    if (distance < this.arrivalRadius) {
+                        const speed = this.maxSpeed * (distance / this.arrivalRadius);
+                        desired.x *= speed;
+                        desired.y *= speed;
+                    } else {
+                        desired.x *= this.maxSpeed;
+                        desired.y *= this.maxSpeed;
+                    }
+                    
+                    // Steering = desired - velocity
+                    return {
+                        x: desired.x - this.velocity.x,
+                        y: desired.y - this.velocity.y
+                    };
+                }
+                
+                return { x: 0, y: 0 };
+            }
+            
+            limit(vector, max) {
+                const magnitude = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+                if (magnitude > max) {
+                    return {
+                        x: (vector.x / magnitude) * max,
+                        y: (vector.y / magnitude) * max
+                    };
+                }
+                return vector;
+            }
+            
+            constrainToBounds() {
+                const margin = 60;
+                this.position.x = Math.max(margin, Math.min(window.innerWidth - margin, this.position.x));
+                this.position.y = Math.max(margin, Math.min(window.innerHeight - margin, this.position.y));
             }
             
             updatePosition() {
-                // Keep bird within screen bounds
-                this.x = Math.max(60, Math.min(window.innerWidth - 60, this.x));
-                this.y = Math.max(40, Math.min(window.innerHeight - 40, this.y));
-                
-                this.container.style.transform = `translate(${this.x}px, ${this.y}px)`;
+                this.container.style.transform = `translate(${this.position.x}px, ${this.position.y}px)`;
             }
             
-            updateBirdOrientation() {
-                // Calculate bird's facing direction and tilt
-                if (Math.abs(this.velocityX) > 0.5) {
-                    const direction = this.velocityX > 0 ? 1 : -1;
-                    const tilt = Math.min(Math.abs(this.velocityX) * 3, 15) * direction;
+            updateOrientation() {
+                const speed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+                
+                if (speed > 1) {
+                    // Calculate direction and banking
+                    const direction = this.velocity.x > 0 ? 1 : -1;
+                    const bank = Math.min(speed * 2, 15) * Math.sign(this.velocity.x);
+                    const pitch = Math.min(Math.abs(this.velocity.y), 10) * Math.sign(-this.velocity.y);
                     
-                    // Smooth bird rotation based on movement
-                    this.bird.style.transform = `scaleX(${direction}) rotate(${tilt * 0.5}deg)`;
+                    this.bird.style.transform = `scaleX(${direction}) rotate(${bank * 0.3}deg) rotateX(${pitch * 0.2}deg)`;
                 } else {
-                    // Gentle bobbing when stationary
-                    const bob = Math.sin(Date.now() * 0.003) * 2;
-                    this.bird.style.transform = `translateY(${bob}px)`;
+                    // Gentle idle animation
+                    const time = Date.now() * 0.002;
+                    const bob = Math.sin(time) * 1.5;
+                    const sway = Math.cos(time * 0.7) * 0.8;
+                    
+                    this.bird.style.transform = `translateY(${bob}px) rotate(${sway}deg)`;
                 }
+            }
+            
+            updateEnergy(deltaTime) {
+                const speed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+                
+                // Energy consumption based on activity
+                if (speed > 3) {
+                    this.energy -= deltaTime * 0.1;
+                } else {
+                    this.energy += deltaTime * 0.05;
+                }
+                
+                this.energy = Math.max(0.1, Math.min(1.0, this.energy));
             }
             
             handleClick() {
-                // Play bird sound
-                this.playBirdSound();
+                const now = Date.now();
                 
-                // Visual feedback
-                this.container.classList.add('clicked');
-                setTimeout(() => {
-                    this.container.classList.remove('clicked');
-                }, 600);
+                // Build trust with repeated interactions
+                this.trustLevel = Math.min(1.0, this.trustLevel + 0.1);
                 
-                // Create feather effect
-                this.createFeatherEffect();
+                // Play chirp sound
+                this.playBirdChirp();
                 
-                // Small random movement
-                this.targetX += (Math.random() - 0.5) * 100;
-                this.targetY += (Math.random() - 0.5) * 60;
+                // Visual excitement
+                this.setState('excited');
+                
+                // Create enhanced feather effect
+                this.createEnhancedFeatherEffect();
+                
+                // Random excited movement
+                const excitement = 80 + Math.random() * 40;
+                this.target = {
+                    x: this.position.x + (Math.random() - 0.5) * excitement,
+                    y: this.position.y + (Math.random() - 0.5) * excitement * 0.6
+                };
+                
+                // Boost energy
+                this.energy = Math.min(1.0, this.energy + 0.2);
+                
+                this.clickCount++;
+                this.lastClickTime = now;
             }
             
-            createFeatherEffect() {
-                for (let i = 0; i < 5; i++) {
-                    const feather = document.createElement('div');
-                    feather.className = 'feather';
-                    feather.style.left = (this.x + Math.random() * 40 - 20) + 'px';
-                    feather.style.top = (this.y + Math.random() * 40 - 20) + 'px';
-                    feather.style.animationDelay = (Math.random() * 0.5) + 's';
+            playBirdChirp() {
+                try {
+                    // Reset and play the audio file
+                    this.audioElement.currentTime = 0;
+                    const playPromise = this.audioElement.play();
                     
-                    document.body.appendChild(feather);
-                    
-                    setTimeout(() => {
-                        if (feather.parentNode) {
-                            feather.parentNode.removeChild(feather);
-                        }
-                    }, 2000);
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.log('Audio play failed, falling back to synthetic chirp');
+                            this.playSyntheticChirp();
+                        });
+                    }
+                } catch (error) {
+                    console.log('Audio file not found, using synthetic chirp');
+                    this.playSyntheticChirp();
                 }
             }
             
-            playBirdSound() {
+            playSyntheticChirp() {
                 try {
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const oscillator = audioContext.createOscillator();
@@ -1106,34 +1364,87 @@
                     oscillator.connect(gainNode);
                     gainNode.connect(audioContext.destination);
                     
-                    // Create realistic bird chirp
-                    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(1500, audioContext.currentTime + 0.1);
-                    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
-                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.35);
+                    // Create more realistic bird chirp pattern
+                    const baseTime = audioContext.currentTime;
                     
-                    oscillator.type = 'sine';
+                    // First chirp
+                    oscillator.frequency.setValueAtTime(900, baseTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1400, baseTime + 0.08);
+                    oscillator.frequency.exponentialRampToValueAtTime(700, baseTime + 0.15);
                     
-                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.4);
+                    // Second chirp
+                    oscillator.frequency.setValueAtTime(1100, baseTime + 0.2);
+                    oscillator.frequency.exponentialRampToValueAtTime(1600, baseTime + 0.28);
+                    oscillator.frequency.exponentialRampToValueAtTime(900, baseTime + 0.4);
                     
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.4);
+                    oscillator.type = 'triangle';
+                    
+                    // Natural volume envelope
+                    gainNode.gain.setValueAtTime(0, baseTime);
+                    gainNode.gain.linearRampToValueAtTime(0.12, baseTime + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.08, baseTime + 0.15);
+                    gainNode.gain.linearRampToValueAtTime(0.1, baseTime + 0.22);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, baseTime + 0.45);
+                    
+                    oscillator.start(baseTime);
+                    oscillator.stop(baseTime + 0.5);
                 } catch (e) {
                     console.log('Audio not supported');
                 }
             }
             
-            startScared() {
-                // Bird flies away quickly when form is wrong
-                this.targetX = Math.random() * window.innerWidth;
-                this.targetY = Math.random() * window.innerHeight * 0.5;
-                this.followSpeed = 0.15;
+            createEnhancedFeatherEffect() {
+                const featherCount = 6 + Math.floor(Math.random() * 4);
                 
+                for (let i = 0; i < featherCount; i++) {
+                    const feather = document.createElement('div');
+                    feather.className = 'feather';
+                    
+                    // Varied feather properties
+                    const size = 6 + Math.random() * 4;
+                    const hue = 30 + Math.random() * 40; // Brown to golden range
+                    
+                    feather.style.width = size + 'px';
+                    feather.style.height = (size * 0.4) + 'px';
+                    feather.style.left = (this.position.x + Math.random() * 50 - 25) + 'px';
+                    feather.style.top = (this.position.y + Math.random() * 50 - 25) + 'px';
+                    feather.style.filter = `hue-rotate(${hue}deg)`;
+                    feather.style.animationDelay = (Math.random() * 0.3) + 's';
+                    feather.style.animationDuration = (2.5 + Math.random() * 1) + 's';
+                    
+                    document.body.appendChild(feather);
+                    
+                    setTimeout(() => {
+                        if (feather.parentNode) {
+                            feather.parentNode.removeChild(feather);
+                        }
+                    }, 3500);
+                }
+            }
+            
+            startScared() {
+                // Bird becomes frightened and flies away quickly
+                this.setState('scared');
+                this.trustLevel = Math.max(0, this.trustLevel - 0.3);
+                this.energy = Math.min(1.0, this.energy + 0.4); // Adrenaline boost
+                
+                // Fly to opposite corner
+                this.target = {
+                    x: this.position.x < window.innerWidth / 2 ? window.innerWidth - 100 : 100,
+                    y: 50 + Math.random() * 100
+                };
+                
+                // Add scared visual effect
+                this.container.classList.add('scared');
                 setTimeout(() => {
-                    this.followSpeed = 0.05; // Return to normal speed
-                }, 2000);
+                    this.container.classList.remove('scared');
+                }, 1200);
+            }
+            
+            getDistance(pos1, pos2) {
+                const dx = pos1.x - pos2.x;
+                const dy = pos1.y - pos2.y;
+                return Math.sqrt(dx * dx + dy * dy);
             }
         }
 
@@ -1144,7 +1455,7 @@
         const shimmerOverlay = document.getElementById('shimmerOverlay');
         const particleContainer = document.getElementById('particleContainer');
 
-        // Initialize the realistic bird
+        // Initialize the enhanced realistic bird
         let realisticBird;
 
         // Create floating particles
@@ -1159,7 +1470,7 @@
             }
         }
 
-        // Form validation with bird interaction
+        // Enhanced form validation with bird interaction
         function validateAnswer() {
             const userAnswer = securityInput.value.trim();
             const correctAnswer = SECURITY_CONFIG.correctAnswer;
@@ -1178,8 +1489,10 @@
                 securityInput.disabled = true;
                 errorMessage.classList.remove('show');
                 
-                // Bird celebration
+                // Enhanced bird celebration
                 realisticBird.handleClick();
+                setTimeout(() => realisticBird.handleClick(), 300);
+                setTimeout(() => realisticBird.handleClick(), 600);
                 
                 // Trigger shimmer
                 shimmerOverlay.classList.add('active');
