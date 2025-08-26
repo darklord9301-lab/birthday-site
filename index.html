@@ -232,111 +232,56 @@
         }
 
         .bird {
-            width: 140px;
-            height: 120px;
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            width: 60px;
+            height: 60px;
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* prevent blocking mouse */
+          }
+
+          .bird-body {
+            width: 60px;
+            height: 40px;
+            background: white;
+            border-radius: 50% 50% 40% 40%;
             position: relative;
-            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.15));
-        }
+            box-shadow: 0 0 8px rgba(255,255,255,0.6);
+            transition: transform 0.2s ease;
+          }
 
-        .bird-body {
-            width: 90px;
-            height: 70px;
-            background: linear-gradient(145deg, #A0522D 0%, var(--brown) 50%, #654321 100%);
-            border-radius: 45px 45px 35px 35px;
+          /* Eye */
+          .eye {
             position: absolute;
-            top: 25px;
-            left: 25px;
-            border: 2px solid rgba(0,0,0,0.2);
-            box-shadow: inset 0 4px 8px rgba(255,255,255,0.3), 
-                        inset 0 -4px 8px rgba(0,0,0,0.2);
-        }
-
-        .bird-beak {
-            width: 0;
-            height: 0;
-            border-left: 20px solid var(--mustard-yellow);
-            border-top: 10px solid transparent;
-            border-bottom: 10px solid transparent;
-            position: absolute;
-            top: 40px;
-            left: 8px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
-
-        .bird-beak::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 18px solid #E6B800;
-            border-top: 8px solid transparent;
-            border-bottom: 8px solid transparent;
-            left: -18px;
-            top: -8px;
-        }
-
-        .bird-eye {
-            width: 16px;
-            height: 16px;
-            background: radial-gradient(circle at 30% 30%, #FFFFFF 20%, var(--black) 25%);
-            border-radius: 50%;
-            position: absolute;
-            top: 35px;
+            top: 12px;
             left: 40px;
-            animation: professionalBlink 5s infinite;
-            border: 1px solid rgba(0,0,0,0.3);
-        }
-
-        .bird-eye::before {
-            content: '';
-            width: 4px;
-            height: 4px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 50%;
-            position: absolute;
-            top: 3px;
-            left: 4px;
-        }
-
-        .bird-cheek {
-            width: 12px;
+            width: 10px;
             height: 10px;
-            background: radial-gradient(ellipse, var(--red) 0%, #B73E2E 70%);
+            background: black;
             border-radius: 50%;
+            transition: transform 0.1s linear;
+          }
+
+          /* Wing */
+          .wing {
             position: absolute;
-            top: 48px;
-            left: 55px;
-            opacity: 0.7;
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
-        }
+            left: -10px;
+            top: 8px;
+            width: 50px;
+            height: 30px;
+            background: white;
+            border-radius: 50%;
+            animation: flap 0.8s ease-in-out infinite;
+            transform-origin: top right;
+            box-shadow: 0 0 6px rgba(255,255,255,0.4);
+          }
 
-        .bird-wing {
-            width: 32px;
-            height: 42px;
-            background: linear-gradient(135deg, #8B4513 0%, #654321 50%, #4A2C17 100%);
-            border-radius: 60% 30% 60% 30%;
-            position: absolute;
-            top: 32px;
-            left: 75px;
-            border: 1px solid rgba(0,0,0,0.3);
-            transform: rotate(-8deg);
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
-        }
+          @keyframes flap {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-30deg); }
+          }
 
-        @keyframes professionalBlink {
-            0%, 92%, 100% { transform: scaleY(1); }
-            96% { transform: scaleY(0.1); }
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0) rotate(0deg); }
-            25% { transform: translateX(-6px) rotate(-1deg); }
-            75% { transform: translateX(6px) rotate(1deg); }
-        }
-
-        .shake {
-            animation: shake 0.6s ease-in-out;
-        }
 
         /* Typography */
         .brand-title {
@@ -806,6 +751,46 @@
                 document.body.style.opacity = '1';
             }, 100);
         });
+
+        const bird = document.querySelector('.bird');
+        const birdBody = document.querySelector('.bird-body');
+        const eye = document.querySelector('.eye');
+
+        let birdX = window.innerWidth / 2;
+        let birdY = window.innerHeight / 2;
+        let targetX = birdX;
+        let targetY = birdY;
+
+        // Follow cursor like food
+        document.addEventListener('mousemove', e => {
+          targetX = e.clientX;
+          targetY = e.clientY;
+        });
+
+        function animateBird() {
+          // Smoothly move bird towards cursor
+          birdX += (targetX - birdX) * 0.05;
+          birdY += (targetY - birdY) * 0.05;
+
+          bird.style.transform = `translate(${birdX}px, ${birdY}px)`;
+
+          // Tilt bird depending on movement
+          let angle = (targetX - birdX) * 0.02;
+          birdBody.style.transform = `rotate(${angle}deg)`;
+
+          // Eye follows cursor
+          let dx = targetX - birdX;
+          let dy = targetY - birdY;
+          let dist = Math.sqrt(dx*dx + dy*dy);
+          let eyeOffsetX = (dx / dist) * 3;
+          let eyeOffsetY = (dy / dist) * 3;
+          eye.style.transform = `translate(${eyeOffsetX}px, ${eyeOffsetY}px)`;
+
+          requestAnimationFrame(animateBird);
+        }
+
+        animateBird();
+
     </script>
 </body>
 </html>
