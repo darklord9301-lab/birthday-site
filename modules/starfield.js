@@ -1,4 +1,4 @@
-import * as THREE from '../libs/three.module.min.js';
+import * as THREE from '../libs/three.module.js';
 
 /**
  * Creates a realistic 3D starfield with twinkling effects and parallax motion
