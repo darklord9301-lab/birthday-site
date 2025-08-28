@@ -1,4 +1,4 @@
-import * as THREE from '../libs/three.module.js';
+import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
 
 /**
  * Warp Speed Starfield - Classic Star Trek/Star Wars Hyperspace Effect
