@@ -122,9 +122,9 @@ export function initStarfield(scene, camera) {
             // Subtle color intensity variation
             const i3 = i * 3;
             const intensity = twinkle * 0.9 + 0.1;
-            colorAttribute.array[i3] *= intensity;
-            colorAttribute.array[i3 + 1] *= intensity;
-            colorAttribute.array[i3 + 2] *= intensity;
+            colorAttribute.array[i3]     = colors[i3]     * intensity;
+            colorAttribute.array[i3 + 1] = colors[i3 + 1] * intensity;
+            colorAttribute.array[i3 + 2] = colors[i3 + 2] * intensity;
         }
         
         sizeAttribute.needsUpdate = true;
