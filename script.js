@@ -21,10 +21,9 @@ camera.lookAt(0, 0, -1);
 // Renderer setup
 const renderer = new THREE.WebGLRenderer({ 
     antialias: true,
-    alpha: false // Allow transparent background if needed
+    alpha: true // Allow transparent background if needed
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x000000, 1);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
