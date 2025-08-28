@@ -1,4 +1,4 @@
-import * as THREE from '../libs/three.module.js';
+import * as THREE from './libs/three.module.js';
 
 /**
  * Creates an EPIC 3D starfield with massive star counts, brilliant colors, and spectacular effects
