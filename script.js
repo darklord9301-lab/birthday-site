@@ -3,6 +3,8 @@ import { initStarfield } from './modules/starfield.js';
 
 // Scene setup
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000); // pure black
+
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(
