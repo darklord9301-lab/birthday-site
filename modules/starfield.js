@@ -101,6 +101,9 @@ export function initStarfield(scene, camera) {
     // Store previous camera position for parallax calculations
     let prevCameraPosition = camera.position.clone();
     
+    // Store original colors for twinkling calculations
+    const originalColors = new Float32Array(colors);
+    
     /**
      * Animation function to be called each frame
      * @param {number} time - Current time in milliseconds
@@ -119,12 +122,12 @@ export function initStarfield(scene, camera) {
             // Update size for twinkling
             sizeAttribute.array[i] = sizes[i] * twinkle;
             
-            // Subtle color intensity variation
+            // Update color intensity using original colors (not destructive)
             const i3 = i * 3;
             const intensity = twinkle * 0.9 + 0.1;
-            colorAttribute.array[i3]     = colors[i3]     * intensity;
-            colorAttribute.array[i3 + 1] = colors[i3 + 1] * intensity;
-            colorAttribute.array[i3 + 2] = colors[i3 + 2] * intensity;
+            colorAttribute.array[i3] = originalColors[i3] * intensity;
+            colorAttribute.array[i3 + 1] = originalColors[i3 + 1] * intensity;
+            colorAttribute.array[i3 + 2] = originalColors[i3 + 2] * intensity;
         }
         
         sizeAttribute.needsUpdate = true;
