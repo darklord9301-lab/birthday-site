@@ -1,374 +1,228 @@
 import * as THREE from './libs/three.module.js';
 
 /**
- * Epic Sci-Fi Starfield - Spacecraft Viewport Experience
- * Realistic space phenomena based on actual astronomical observations
+ * Warp Speed Starfield - Classic Star Trek/Star Wars Hyperspace Effect
+ * Creates the iconic stretching star trails effect during FTL travel
  * @param {THREE.Scene} scene - The Three.js scene
- * @param {THREE.Camera} camera - The camera for spacecraft viewport
+ * @param {THREE.Camera} camera - The camera
  * @returns {Object} - Starfield objects and animation functions
  */
 export function initStarfield(scene, camera) {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
-    // Realistic star counts and distributions
-    const starCount = isMobile ? 12000 : 20000;
-    const galaxyRadius = 4000;
-    const galaxyHeight = 200;
+    const starCount = isMobile ? 1500 : 3000;
+    const maxDistance = 2000;
     
-    // Stellar classification based on real astronomy
-    const stellarClasses = [
-        // O-type: Hot blue supergiants
-        { color: [0.6, 0.8, 1.0], size: 3.5, brightness: 1.0, rarity: 0.000003, twinkle: 0.8 },
-        // B-type: Blue-white giants
-        { color: [0.7, 0.9, 1.0], size: 2.8, brightness: 0.9, rarity: 0.0013, twinkle: 0.7 },
-        // A-type: White main sequence
-        { color: [1.0, 1.0, 1.0], size: 2.2, brightness: 0.8, rarity: 0.0061, twinkle: 0.6 },
-        // F-type: Yellow-white
-        { color: [1.0, 1.0, 0.85], size: 1.8, brightness: 0.7, rarity: 0.031, twinkle: 0.5 },
-        // G-type: Yellow (like our Sun)
-        { color: [1.0, 0.95, 0.7], size: 1.5, brightness: 0.6, rarity: 0.076, twinkle: 0.4 },
-        // K-type: Orange dwarfs
-        { color: [1.0, 0.8, 0.5], size: 1.2, brightness: 0.5, rarity: 0.121, twinkle: 0.3 },
-        // M-type: Red dwarfs (most common)
-        { color: [1.0, 0.6, 0.3], size: 0.8, brightness: 0.4, rarity: 0.765, twinkle: 0.2 }
-    ];
+    // Star data
+    const stars = [];
+    const starGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(starCount * 6); // 2 points per star for trail
+    const colors = new Float32Array(starCount * 6);
     
-    // Create star data arrays
-    const positions = new Float32Array(starCount * 3);
-    const colors = new Float32Array(starCount * 3);
-    const sizes = new Float32Array(starCount);
-    const twinklePhases = new Float32Array(starCount);
-    const twinkleSpeeds = new Float32Array(starCount);
-    const distances = new Float32Array(starCount);
-    const brightnesses = new Float32Array(starCount);
-    
-    // Generate realistic star distribution
+    // Initialize stars
     for (let i = 0; i < starCount; i++) {
-        const i3 = i * 3;
+        const star = {
+            x: (Math.random() - 0.5) * 4000,
+            y: (Math.random() - 0.5) * 2000, 
+            z: (Math.random() - 0.5) * 4000,
+            prevX: 0,
+            prevY: 0,
+            prevZ: 0,
+            speed: 0,
+            color: new THREE.Color()
+        };
         
-        // Create galactic disk distribution with spiral arms
-        let x, y, z, radius;
+        // Set initial previous position
+        star.prevX = star.x;
+        star.prevY = star.y;
+        star.prevZ = star.z;
         
-        if (Math.random() < 0.85) {
-            // Main galactic disk with spiral structure
-            const angle = Math.random() * Math.PI * 2;
-            const spiralArm = Math.sin(angle * 2 + Math.random() * 0.5) * 0.3 + 1;
-            radius = Math.pow(Math.random(), 0.7) * galaxyRadius * spiralArm;
-            
-            x = Math.cos(angle) * radius;
-            z = Math.sin(angle) * radius;
-            
-            // Galactic disk height distribution
-            y = (Math.random() - 0.5) * galaxyHeight * Math.exp(-radius / (galaxyRadius * 0.3));
+        // Random star colors - blue, white, red spectrum
+        const colorType = Math.random();
+        if (colorType < 0.3) {
+            star.color.setRGB(0.8 + Math.random() * 0.2, 0.9 + Math.random() * 0.1, 1.0); // Blue-white
+        } else if (colorType < 0.7) {
+            star.color.setRGB(1.0, 1.0, 1.0); // Pure white
         } else {
-            // Galactic halo - sparse, older stars
-            const phi = Math.random() * Math.PI * 2;
-            const theta = Math.acos(2 * Math.random() - 1);
-            radius = galaxyRadius * 0.5 + Math.random() * galaxyRadius * 1.5;
-            
-            x = radius * Math.sin(theta) * Math.cos(phi);
-            y = radius * Math.sin(theta) * Math.sin(phi);
-            z = radius * Math.cos(theta);
+            star.color.setRGB(1.0, 0.7 + Math.random() * 0.3, 0.6 + Math.random() * 0.2); // Orange-red
         }
         
-        positions[i3] = x;
-        positions[i3 + 1] = y;
-        positions[i3 + 2] = z;
-        
-        distances[i] = Math.sqrt(x * x + y * y + z * z);
-        
-        // Assign stellar class based on rarity
-        let stellarClass = stellarClasses[stellarClasses.length - 1]; // Default to M-type
-        const rand = Math.random();
-        let cumulative = 0;
-        
-        for (let cls of stellarClasses) {
-            cumulative += cls.rarity;
-            if (rand <= cumulative) {
-                stellarClass = cls;
-                break;
-            }
-        }
-        
-        // Apply stellar class properties
-        colors[i3] = stellarClass.color[0];
-        colors[i3 + 1] = stellarClass.color[1];
-        colors[i3 + 2] = stellarClass.color[2];
-        
-        // Size based on distance and stellar class
-        const distanceFactor = Math.max(0.1, 1000 / (distances[i] + 100));
-        sizes[i] = stellarClass.size * distanceFactor * (isMobile ? 0.8 : 1.0);
-        
-        brightnesses[i] = stellarClass.brightness;
-        twinklePhases[i] = Math.random() * Math.PI * 2;
-        twinkleSpeeds[i] = 0.5 + Math.random() * stellarClass.twinkle;
+        stars.push(star);
     }
     
-    // Store original values for animation
-    const originalColors = new Float32Array(colors);
-    const originalSizes = new Float32Array(sizes);
+    // Warp speed parameters
+    let warpSpeed = 0;
+    let targetWarpSpeed = 50;
+    let isWarping = false;
     
-    // Create star geometry
-    const starGeometry = new THREE.BufferGeometry();
+    function updateStarPositions() {
+        for (let i = 0; i < starCount; i++) {
+            const star = stars[i];
+            const i6 = i * 6; // 6 coordinates per star (2 points × 3 coords)
+            
+            // Store previous position for trail effect
+            star.prevX = star.x;
+            star.prevY = star.y;
+            star.prevZ = star.z;
+            
+            // Move star towards camera
+            star.z += warpSpeed;
+            
+            // Reset star position when it passes the camera
+            if (star.z > 200) {
+                star.x = (Math.random() - 0.5) * 4000;
+                star.y = (Math.random() - 0.5) * 2000;
+                star.z = -maxDistance;
+                star.prevX = star.x;
+                star.prevY = star.y;
+                star.prevZ = star.z;
+            }
+            
+            // Calculate distance from center for perspective effect
+            const distance = Math.sqrt(star.x * star.x + star.y * star.y);
+            const perspective = Math.max(0.1, (star.z + maxDistance) / maxDistance);
+            
+            // Current star position (front of trail)
+            positions[i6] = star.x;
+            positions[i6 + 1] = star.y;
+            positions[i6 + 2] = star.z;
+            
+            // Previous star position (back of trail) - stretched based on speed
+            const trailLength = Math.min(warpSpeed * 3, 300);
+            const trailX = star.x - (star.x / distance) * trailLength * perspective;
+            const trailY = star.y - (star.y / distance) * trailLength * perspective;
+            const trailZ = star.z - trailLength;
+            
+            positions[i6 + 3] = isNaN(trailX) ? star.x : trailX;
+            positions[i6 + 4] = isNaN(trailY) ? star.y : trailY;
+            positions[i6 + 5] = trailZ;
+            
+            // Color intensity based on speed and distance
+            const intensity = Math.min(1.0, warpSpeed / 100 + 0.3);
+            const alpha = Math.max(0.1, perspective * intensity);
+            
+            // Front point (brighter)
+            colors[i6] = star.color.r * intensity;
+            colors[i6 + 1] = star.color.g * intensity;
+            colors[i6 + 2] = star.color.b * intensity;
+            
+            // Back point (dimmer for trail effect)
+            colors[i6 + 3] = star.color.r * intensity * 0.3;
+            colors[i6 + 4] = star.color.g * intensity * 0.3;
+            colors[i6 + 5] = star.color.b * intensity * 0.3;
+        }
+    }
+    
+    // Create geometry
     starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    starGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     
-    // Realistic star material
-    const starMaterial = new THREE.PointsMaterial({
+    // Line material for streaking effect
+    const starMaterial = new THREE.LineBasicMaterial({
         vertexColors: true,
-        sizeAttenuation: true,
         transparent: true,
-        opacity: 0.95,
+        opacity: 1.0,
         blending: THREE.AdditiveBlending,
-        alphaTest: 0.001
+        linewidth: 2
     });
     
-    const starField = new THREE.Points(starGeometry, starMaterial);
+    const starField = new THREE.LineSegments(starGeometry, starMaterial);
     scene.add(starField);
     
-    // Create nebula clouds (realistic astronomical phenomena)
-    const nebulaGroup = new THREE.Group();
-    const nebulas = [];
-    const nebulaCount = isMobile ? 8 : 15;
+    // Add some bright center stars that don't streak
+    const centerStarCount = 200;
+    const centerGeometry = new THREE.BufferGeometry();
+    const centerPositions = new Float32Array(centerStarCount * 3);
+    const centerColors = new Float32Array(centerStarCount * 3);
+    const centerSizes = new Float32Array(centerStarCount);
     
-    // Nebula types based on real space phenomena
-    const nebulaTypes = [
-        { color: 0xff4444, opacity: 0.08, name: 'H-alpha Emission' },
-        { color: 0x4488ff, opacity: 0.06, name: 'Blue Reflection' },
-        { color: 0xff88ff, opacity: 0.07, name: 'Planetary' },
-        { color: 0x44ff88, opacity: 0.05, name: 'Oxygen III' },
-        { color: 0xffaa44, opacity: 0.06, name: 'Sulfur II' }
-    ];
-    
-    for (let i = 0; i < nebulaCount; i++) {
-        const type = nebulaTypes[Math.floor(Math.random() * nebulaTypes.length)];
+    for (let i = 0; i < centerStarCount; i++) {
+        centerPositions[i * 3] = (Math.random() - 0.5) * 1000;
+        centerPositions[i * 3 + 1] = (Math.random() - 0.5) * 500;
+        centerPositions[i * 3 + 2] = (Math.random() - 0.5) * 1000;
         
-        // Create realistic nebula shapes
-        const nebulaSize = 150 + Math.random() * 300;
-        const nebulaGeometry = new THREE.SphereGeometry(
-            nebulaSize,
-            isMobile ? 16 : 32,
-            isMobile ? 12 : 24
-        );
+        const brightness = 0.5 + Math.random() * 0.5;
+        centerColors[i * 3] = brightness;
+        centerColors[i * 3 + 1] = brightness;
+        centerColors[i * 3 + 2] = brightness;
         
-        const nebulaMaterial = new THREE.MeshBasicMaterial({
-            color: type.color,
-            transparent: true,
-            opacity: type.opacity,
-            blending: THREE.AdditiveBlending,
-            fog: false,
-            side: THREE.DoubleSide
-        });
-        
-        const nebulaMesh = new THREE.Mesh(nebulaGeometry, nebulaMaterial);
-        
-        // Position nebulas in spiral arm regions
-        const armAngle = (i / nebulaCount) * Math.PI * 4 + Math.random() * 0.5;
-        const armRadius = 800 + Math.random() * 2000;
-        
-        nebulaMesh.position.set(
-            Math.cos(armAngle) * armRadius + (Math.random() - 0.5) * 400,
-            (Math.random() - 0.5) * galaxyHeight * 2,
-            Math.sin(armAngle) * armRadius + (Math.random() - 0.5) * 400
-        );
-        
-        nebulaMesh.rotation.set(
-            Math.random() * Math.PI,
-            Math.random() * Math.PI,
-            Math.random() * Math.PI
-        );
-        
-        // Scale for realistic proportions
-        const scale = 0.7 + Math.random() * 0.6;
-        nebulaMesh.scale.set(scale, scale * 0.6, scale);
-        
-        nebulas.push({
-            mesh: nebulaMesh,
-            originalOpacity: type.opacity,
-            rotationSpeed: {
-                x: (Math.random() - 0.5) * 0.0005,
-                y: (Math.random() - 0.5) * 0.0008,
-                z: (Math.random() - 0.5) * 0.0003
-            },
-            pulsePhase: Math.random() * Math.PI * 2,
-            pulseSpeed: 0.2 + Math.random() * 0.3
-        });
-        
-        nebulaGroup.add(nebulaMesh);
+        centerSizes[i] = 2 + Math.random() * 3;
     }
     
-    scene.add(nebulaGroup);
+    centerGeometry.setAttribute('position', new THREE.BufferAttribute(centerPositions, 3));
+    centerGeometry.setAttribute('color', new THREE.BufferAttribute(centerColors, 3));
+    centerGeometry.setAttribute('size', new THREE.BufferAttribute(centerSizes, 1));
     
-    // Cosmic dust particles
-    const dustCount = isMobile ? 2000 : 4000;
-    const dustGeometry = new THREE.BufferGeometry();
-    const dustPositions = new Float32Array(dustCount * 3);
-    const dustColors = new Float32Array(dustCount * 3);
-    const dustSizes = new Float32Array(dustCount);
-    
-    for (let i = 0; i < dustCount; i++) {
-        const i3 = i * 3;
-        
-        // Distribute dust in local space around camera
-        dustPositions[i3] = (Math.random() - 0.5) * 2000;
-        dustPositions[i3 + 1] = (Math.random() - 0.5) * 500;
-        dustPositions[i3 + 2] = (Math.random() - 0.5) * 2000;
-        
-        // Dust color - subtle browns and grays
-        const dustBrightness = 0.1 + Math.random() * 0.2;
-        dustColors[i3] = dustBrightness * (0.4 + Math.random() * 0.3);
-        dustColors[i3 + 1] = dustBrightness * (0.3 + Math.random() * 0.2);
-        dustColors[i3 + 2] = dustBrightness * (0.2 + Math.random() * 0.2);
-        
-        dustSizes[i] = 0.5 + Math.random() * 1.0;
-    }
-    
-    dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
-    dustGeometry.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
-    dustGeometry.setAttribute('size', new THREE.BufferAttribute(dustSizes, 1));
-    
-    const dustMaterial = new THREE.PointsMaterial({
+    const centerMaterial = new THREE.PointsMaterial({
         vertexColors: true,
-        sizeAttenuation: true,
+        sizeAttenuation: false,
         transparent: true,
-        opacity: 0.6,
-        blending: THREE.NormalBlending
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
     });
     
-    const cosmicDust = new THREE.Points(dustGeometry, dustMaterial);
-    scene.add(cosmicDust);
+    const centerStars = new THREE.Points(centerGeometry, centerMaterial);
+    scene.add(centerStars);
     
-    // Camera movement tracking
-    let previousCameraPosition = camera.position.clone();
-    let spacecraftVelocity = new THREE.Vector3();
+    // Control functions
+    function startWarp() {
+        isWarping = true;
+        targetWarpSpeed = 150;
+    }
     
-    /**
-     * Spacecraft-style animation with realistic physics
-     */
+    function stopWarp() {
+        isWarping = false;
+        targetWarpSpeed = 5;
+    }
+    
+    function setWarpSpeed(speed) {
+        targetWarpSpeed = speed;
+    }
+    
+    // Animation function
     function animate(time) {
-        const deltaTime = time * 0.001;
+        // Smooth speed transition
+        const speedDiff = targetWarpSpeed - warpSpeed;
+        warpSpeed += speedDiff * 0.02;
         
-        // Calculate spacecraft movement
-        const currentCameraPosition = camera.position.clone();
-        spacecraftVelocity.copy(currentCameraPosition).sub(previousCameraPosition);
-        const speed = spacecraftVelocity.length();
+        updateStarPositions();
         
-        // Realistic stellar parallax based on distance
-        if (speed > 0.01) {
-            const positionAttr = starGeometry.getAttribute('position');
-            
-            for (let i = 0; i < starCount; i++) {
-                const i3 = i * 3;
-                const starDistance = distances[i];
-                
-                // Parallax factor based on distance (closer stars move more)
-                const parallaxFactor = Math.min(10.0, 5000.0 / (starDistance + 100));
-                
-                positionAttr.array[i3] -= spacecraftVelocity.x * parallaxFactor;
-                positionAttr.array[i3 + 1] -= spacecraftVelocity.y * parallaxFactor;
-                positionAttr.array[i3 + 2] -= spacecraftVelocity.z * parallaxFactor;
-            }
-            
-            positionAttr.needsUpdate = true;
+        // Update geometry
+        starGeometry.attributes.position.needsUpdate = true;
+        starGeometry.attributes.color.needsUpdate = true;
+        
+        // Rotate slightly for more dynamic effect
+        starField.rotation.z += 0.001;
+        
+        // Add some camera shake at high speeds
+        if (warpSpeed > 100) {
+            const shake = (warpSpeed - 100) * 0.0001;
+            camera.position.x += (Math.random() - 0.5) * shake;
+            camera.position.y += (Math.random() - 0.5) * shake;
         }
-        
-        // Realistic stellar twinkling due to cosmic dust
-        const sizeAttr = starGeometry.getAttribute('size');
-        const colorAttr = starGeometry.getAttribute('color');
-        
-        for (let i = 0; i < starCount; i++) {
-            const phase = twinklePhases[i] + deltaTime * twinkleSpeeds[i];
-            const atmosphericTwinkle = 0.85 + 0.15 * Math.sin(phase);
-            const brightness = brightnesses[i] * atmosphericTwinkle;
-            
-            // Update size for twinkling effect
-            sizeAttr.array[i] = originalSizes[i] * atmosphericTwinkle;
-            
-            // Update color brightness
-            const i3 = i * 3;
-            colorAttr.array[i3] = originalColors[i3] * brightness;
-            colorAttr.array[i3 + 1] = originalColors[i3 + 1] * brightness;
-            colorAttr.array[i3 + 2] = originalColors[i3 + 2] * brightness;
-        }
-        
-        sizeAttr.needsUpdate = true;
-        colorAttr.needsUpdate = true;
-        
-        // Animate nebulas with realistic physics
-        nebulas.forEach(nebula => {
-            nebula.mesh.rotation.x += nebula.rotationSpeed.x;
-            nebula.mesh.rotation.y += nebula.rotationSpeed.y;
-            nebula.mesh.rotation.z += nebula.rotationSpeed.z;
-            
-            // Subtle opacity pulsing
-            const pulse = nebula.pulsePhase + deltaTime * nebula.pulseSpeed;
-            const pulseIntensity = 0.8 + 0.2 * Math.sin(pulse);
-            nebula.mesh.material.opacity = nebula.originalOpacity * pulseIntensity;
-        });
-        
-        // Cosmic dust movement
-        const dustPosAttr = dustGeometry.getAttribute('position');
-        for (let i = 0; i < dustCount; i++) {
-            const i3 = i * 3;
-            
-            // Drift with spacecraft movement
-            dustPosAttr.array[i3] -= spacecraftVelocity.x * 2.0;
-            dustPosAttr.array[i3 + 1] -= spacecraftVelocity.y * 2.0;
-            dustPosAttr.array[i3 + 2] -= spacecraftVelocity.z * 2.0;
-            
-            // Wrap around for infinite effect
-            if (Math.abs(dustPosAttr.array[i3]) > 1000) {
-                dustPosAttr.array[i3] = (Math.random() - 0.5) * 2000;
-            }
-            if (Math.abs(dustPosAttr.array[i3 + 2]) > 1000) {
-                dustPosAttr.array[i3 + 2] = (Math.random() - 0.5) * 2000;
-            }
-        }
-        dustPosAttr.needsUpdate = true;
-        
-        // Very subtle galactic rotation
-        starField.rotation.y += 0.00005;
-        nebulaGroup.rotation.y += 0.00003;
-        
-        previousCameraPosition.copy(currentCameraPosition);
     }
     
     function dispose() {
         scene.remove(starField);
-        scene.remove(nebulaGroup);
-        scene.remove(cosmicDust);
-        
+        scene.remove(centerStars);
         starGeometry.dispose();
         starMaterial.dispose();
-        dustGeometry.dispose();
-        dustMaterial.dispose();
-        
-        nebulas.forEach(nebula => {
-            nebula.mesh.geometry.dispose();
-            nebula.mesh.material.dispose();
-        });
+        centerGeometry.dispose();
+        centerMaterial.dispose();
     }
     
-    // Get stats for HUD display
-    function getStats() {
-        return {
-            starCount,
-            nebulaCount,
-            dustCount,
-            galaxyRadius,
-            spacecraftSpeed: spacecraftVelocity.length()
-        };
-    }
+    // Auto-start warp effect after a delay
+    setTimeout(startWarp, 1000);
     
     return {
         starField,
-        nebulaGroup,
-        cosmicDust,
-        nebulas,
+        centerStars,
         animate,
         dispose,
-        getStats,
+        startWarp,
+        stopWarp,
+        setWarpSpeed,
+        getCurrentSpeed: () => warpSpeed,
         isMobile
     };
 }
