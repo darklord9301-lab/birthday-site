@@ -173,8 +173,8 @@ export function initStarfield(scene, camera) {
     scene.add(spaceDust);
     spaceObjects.push(spaceDust);
     
-    let warpSpeed = 2.5;
-    let targetWarpSpeed = 2.5;
+    let warpSpeed = 1.5;
+    let targetWarpSpeed = 1.5;
     let time = 0;
     
     function updateStarPositions() {
