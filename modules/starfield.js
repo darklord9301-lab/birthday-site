@@ -1,5 +1,5 @@
-// modules/starfield.js
-import * as THREE from '../libs/three.module.js';
+import * as THREE from '/birthday-site/libs/three.module.js';
+
 
 export function initStarfield(scene, camera) {
     const STAR_COUNT = 4000;
