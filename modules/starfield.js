@@ -16,7 +16,7 @@ export function initStarfield(scene, camera) {
         brightStarCount: isMobile ? 600 : 900,
         dustParticleCount: isMobile ? 500 : 1000,
         maxDistance: 5000,
-        centerGlowIntensity: 0.2
+        centerGlowIntensity: -0.5
     };
     
     const spaceObjects = [];
