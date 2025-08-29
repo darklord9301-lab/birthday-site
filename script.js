@@ -1,5 +1,6 @@
 import * as THREE from '/birthday-site/libs/three.module.js';
 import { initStarfield } from '/birthday-site/modules/starfield.js';
+import { showLoading } from '/birthday-site/modules/loading.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -26,10 +27,9 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-// Initialize starfield
-const starfield = initStarfield(scene, camera);
 
 // Animation variables
+let starfield;
 let animationId;
 let lastTime = 0;
 
@@ -72,9 +72,15 @@ function onWindowResize() {
 function init() {
     // Add resize listener
     window.addEventListener('resize', onWindowResize);
-    
-    // Start animation loop
+
+    // Start starfield immediately (runs behind overlay)
+    starfield = initStarfield(scene, camera);
     animate(0);
+    
+    // Show loading overlay, then fade to starfield
+    showLoading().then(() => {
+        // After loading completes, we could trigger other modules here (e.g., glass panel)
+    });
 }
 
 /**
