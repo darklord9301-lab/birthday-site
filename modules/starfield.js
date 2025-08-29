@@ -1,5 +1,4 @@
-import * as THREE from '../libs/three.module.js';
-
+import * as THREE from '/birthday-site/libs/three.module.js';
 /**
  * Warp Speed Starfield - Classic Star Trek/Star Wars Hyperspace Effect
  * Creates the iconic stretching star trails effect during FTL travel
