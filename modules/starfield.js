@@ -1,5 +1,4 @@
 import * as THREE from '/birthday-site/libs/three.module.js';
-
 /**
  * Epic Space Environment - Vibrant Starfield with Galaxies, Nebulae & Space Dust
  * Creates an immersive cosmic experience with multiple space elements
