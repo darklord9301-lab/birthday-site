@@ -1,18 +1,16 @@
 import * as THREE from '/birthday-site/libs/three.module.js';
 import { initStarfield } from '/birthday-site/modules/starfield.js';
 
-
 // Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000); // pure black
-
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(
     75, // Field of view
     window.innerWidth / window.innerHeight, // Aspect ratio
     0.1, // Near clipping plane
-    2000 // Far clipping plane
+    10000 // Increased far clipping plane for starfield
 );
 
 // Position camera
@@ -33,14 +31,19 @@ const starfield = initStarfield(scene, camera);
 
 // Animation variables
 let animationId;
+let lastTime = 0;
 
 /**
  * Main animation loop
  */
 function animate(time) {
+    // Calculate delta time
+    const deltaTime = time - lastTime;
+    lastTime = time;
+    
     // Update starfield animations (twinkling, parallax)
     if (starfield && starfield.animate) {
-        starfield.animate(time);
+        starfield.animate(deltaTime);
     }
     
     // Render the scene
@@ -71,7 +74,7 @@ function init() {
     window.addEventListener('resize', onWindowResize);
     
     // Start animation loop
-    animate();
+    animate(0);
 }
 
 /**
