@@ -1,4 +1,5 @@
-import * as THREE from '/birthday-site/libs/three.module.js';
+import * as THREE from '../libs/three.module.js';
+
 /**
  * Enhanced Warp Speed Starfield - More Vibrant and Colorful
  * Creates a slower, more colorful stretching star trails effect
@@ -65,10 +66,10 @@ export function initStarfield(scene, camera) {
         stars.push(star);
     }
     
-    // Warp speed parameters - much slower and smoother
-    let warpSpeed = 0;
-    let targetWarpSpeed = 15; // Much slower than before
-    let isWarping = false;
+    // Constant warp speed parameters
+    let warpSpeed = 5; // Much slower aesthetic speed
+    let targetWarpSpeed = 5;
+    let isWarping = true;
     
     function updateStarPositions() {
         for (let i = 0; i < starCount; i++) {
@@ -113,7 +114,7 @@ export function initStarfield(scene, camera) {
             positions[i6 + 5] = trailZ;
             
             // Enhanced color intensity and vibrancy
-            const baseIntensity = Math.min(1.5, warpSpeed / 30 + 0.6); // Higher base intensity
+            const baseIntensity = Math.min(1.5, warpSpeed / 5 + 0.8); // Adjusted for slower speed
             const intensity = baseIntensity * star.brightness;
             const alpha = Math.max(0.2, perspective * intensity);
             
@@ -204,24 +205,22 @@ export function initStarfield(scene, camera) {
     // Control functions
     function startWarp() {
         isWarping = true;
-        targetWarpSpeed = 25; // Slower max speed
+        warpSpeed = 5; // Gentle constant speed
     }
     
     function stopWarp() {
         isWarping = false;
-        targetWarpSpeed = 2; // Very slow when not warping
+        warpSpeed = 5; // Keep same gentle speed
     }
     
     function setWarpSpeed(speed) {
-        targetWarpSpeed = Math.min(speed, 40); // Cap maximum speed
+        warpSpeed = speed; // Direct speed setting
+        targetWarpSpeed = speed;
     }
     
     // Animation function
     function animate(time) {
-        // Much slower, smoother speed transition
-        const speedDiff = targetWarpSpeed - warpSpeed;
-        warpSpeed += speedDiff * 0.01; // Slower acceleration
-        
+        // No speed transitions - constant speed
         updateStarPositions();
         
         // Update geometry
@@ -231,12 +230,7 @@ export function initStarfield(scene, camera) {
         // Very gentle rotation for subtle dynamic effect
         starField.rotation.z += 0.0005;
         
-        // Minimal camera shake only at very high speeds
-        if (warpSpeed > 30) {
-            const shake = (warpSpeed - 30) * 0.00005;
-            camera.position.x += (Math.random() - 0.5) * shake;
-            camera.position.y += (Math.random() - 0.5) * shake;
-        }
+        // No camera shake for smooth aesthetic experience
     }
     
     function dispose() {
@@ -248,11 +242,8 @@ export function initStarfield(scene, camera) {
         centerMaterial.dispose();
     }
     
-    // Auto-start warp effect after a delay - slower buildup
-    setTimeout(() => {
-        isWarping = true;
-        targetWarpSpeed = 12; // Start even slower
-    }, 1500);
+    // Auto-start at constant speed immediately
+    // No timeout needed - starts at constant speed right away
     
     return {
         starField,
