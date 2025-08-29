@@ -1,5 +1,6 @@
-import * as THREE from './libs/three.module.js';
-import { initStarfield } from './modules/starfield.js';
+import * as THREE from '/birthday-site/libs/three.module.js';
+import { initStarfield } from '/birthday-site/modules/starfield.js';
+
 
 // Scene setup
 const scene = new THREE.Scene();
