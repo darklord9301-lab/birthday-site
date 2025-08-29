@@ -12,7 +12,7 @@ export function initStarfield(scene, camera) {
     
     // Configuration matching the reference
     const config = {
-        starCount: isMobile ? 4000 : 8000,
+        starCount: isMobile ? 2000 : 4000,
         brightStarCount: isMobile ? 300 : 600,
         dustParticleCount: isMobile ? 1000 : 2000,
         maxDistance: 3000,
