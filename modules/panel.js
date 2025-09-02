@@ -129,7 +129,7 @@ function createPanelStyles() {
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 5, 15, 0.4);
+            background: rgba(0, 5, 15, 0.004);
             display: flex;
             justify-content: center;
             align-items: center;
