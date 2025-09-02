@@ -134,7 +134,7 @@ function createPanelStyles() {
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            opacity: 0;
+            opacity: 0.004;
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             pointer-events: none;
             backdrop-filter: blur(0.5px);
