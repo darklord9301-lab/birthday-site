@@ -40,28 +40,46 @@ export function showLoading(duration = 10) {
 
             #loading-progress {
                 position: absolute;
-                bottom: 0;
+                top: 0;
                 left: 0;
                 width: 100%;
-                height: 4px;
-                background: rgba(255, 255, 255, 0.1);
+                height: 8px;
+                background: rgba(0, 0, 0, 0.3);
                 overflow: hidden;
+                z-index: 10000;
             }
 
             #loading-progress-bar {
                 height: 100%;
                 width: 0%;
-                background: linear-gradient(90deg, #4ecdc4, #45b7d1, #6c5ce7);
-                background-size: 200% 100%;
-                animation: gradient-shift 2s ease-in-out infinite;
+                background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #f39c12, #e74c3c);
+                background-size: 300% 100%;
+                animation: gradient-shift 1.5s ease-in-out infinite;
                 transition: width 0.1s ease-out;
-                box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+                box-shadow: 0 0 20px rgba(255, 107, 107, 0.8), 0 0 40px rgba(78, 205, 196, 0.6);
+                position: relative;
+            }
+
+            #loading-progress-bar::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+                animation: shimmer 2s ease-in-out infinite;
             }
 
             @keyframes gradient-shift {
                 0% { background-position: 0% 50%; }
                 50% { background-position: 100% 50%; }
                 100% { background-position: 0% 50%; }
+            }
+
+            @keyframes shimmer {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(400%); }
             }
 
             .fade-out {
