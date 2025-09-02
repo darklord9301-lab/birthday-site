@@ -80,36 +80,36 @@ function stopGlitterEffect() {
  */
 function createPanelHTML() {
     return `
-        <div class="panel-overlay" id="security-panel-overlay">
-            <div class="panel-container" id="security-panel">
-                <div class="panel-bg-effects">
-                    <div class="glass-reflection"></div>
-                    <div class="cosmic-glow"></div>
-                    <div class="edge-highlight"></div>
+        <div class="panel-overlay-ultra" id="security-panel-overlay">
+            <div class="panel-container-ultra" id="security-panel">
+                <div class="panel-bg-effects-ultra">
+                    <div class="glass-reflection-ultra"></div>
+                    <div class="cosmic-glow-ultra"></div>
+                    <div class="edge-highlight-ultra"></div>
                 </div>
-                <div class="panel-content">
-                    <h1 class="panel-title">
-                        <span class="title-text">Security Check</span>
-                        <div class="title-shimmer"></div>
+                <div class="panel-content-ultra">
+                    <h1 class="panel-title-ultra">
+                        <span class="title-text-ultra">Security Check</span>
+                        <div class="title-shimmer-ultra"></div>
                     </h1>
-                    <div class="panel-question">
+                    <div class="panel-question-ultra">
                         <p>Nickname given to you by Aditya.</p>
-                        <div class="question-underline"></div>
+                        <div class="question-underline-ultra"></div>
                     </div>
-                    <div class="panel-input-group">
+                    <div class="panel-input-group-ultra">
                         <input 
                             type="text" 
                             id="security-answer" 
-                            class="panel-input" 
+                            class="panel-input-ultra" 
                             placeholder="Enter your answer"
                             autocomplete="off"
                         />
-                        <div class="input-glow"></div>
+                        <div class="input-glow-ultra"></div>
                     </div>
-                    <button id="panel-next-btn" class="panel-button">
-                        <span class="button-text">Next</span>
-                        <div class="button-glow"></div>
-                        <div class="button-ripple"></div>
+                    <button id="panel-next-btn" class="panel-button-ultra">
+                        <span class="button-text-ultra">Next</span>
+                        <div class="button-glow-ultra"></div>
+                        <div class="button-ripple-ultra"></div>
                     </button>
                 </div>
             </div>
@@ -123,13 +123,13 @@ function createPanelHTML() {
 function createPanelStyles() {
     const style = document.createElement('style');
     style.textContent = `
-        .panel-overlay {
+        .panel-overlay-ultra {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 5, 15, 0.4);
+            background: rgba(0, 5, 15, 0.05);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -137,39 +137,39 @@ function createPanelStyles() {
             opacity: 0;
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             pointer-events: none;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(0.5px);
         }
         
-        .panel-overlay.visible {
+        .panel-overlay-ultra.visible {
             opacity: 1;
             pointer-events: auto;
         }
         
-        .panel-container {
+        .panel-container-ultra {
             position: relative;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.005);
             backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.02);
             border-radius: 24px;
             padding: 45px 55px;
             max-width: 480px;
             width: 90%;
             box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.4),
-                0 0 80px rgba(0, 255, 255, 0.15),
-                0 0 120px rgba(255, 0, 255, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+                0 20px 60px rgba(0, 0, 0, 0.08),
+                0 0 80px rgba(0, 255, 255, 0.03),
+                0 0 120px rgba(255, 0, 255, 0.02),
+                inset 0 1px 0 rgba(255, 255, 255, 0.02),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.01);
             transform: scale(0.85) translateY(60px);
             transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             overflow: hidden;
         }
         
-        .panel-overlay.visible .panel-container {
+        .panel-overlay-ultra.visible .panel-container-ultra {
             transform: scale(1) translateY(0);
         }
         
-        .panel-container.shake {
+        .panel-container-ultra.shake {
             animation: shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
         }
         
@@ -181,7 +181,7 @@ function createPanelStyles() {
             80% { transform: scale(1) translateX(6px) rotate(0.3deg); }
         }
         
-        .panel-bg-effects {
+        .panel-bg-effects-ultra {
             position: absolute;
             top: 0;
             left: 0;
@@ -192,7 +192,7 @@ function createPanelStyles() {
             overflow: hidden;
         }
         
-        .glass-reflection {
+        .glass-reflection-ultra {
             position: absolute;
             top: -50%;
             left: -50%;
@@ -201,7 +201,7 @@ function createPanelStyles() {
             background: linear-gradient(
                 45deg,
                 transparent 30%,
-                rgba(255, 255, 255, 0.03) 50%,
+                rgba(255, 255, 255, 0.005) 50%,
                 transparent 70%
             );
             animation: glassReflection 4s ease-in-out infinite;
@@ -212,7 +212,7 @@ function createPanelStyles() {
             50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
         }
         
-        .cosmic-glow {
+        .cosmic-glow-ultra {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -220,8 +220,8 @@ function createPanelStyles() {
             height: 120%;
             background: radial-gradient(
                 ellipse at center,
-                rgba(0, 255, 255, 0.08) 0%,
-                rgba(255, 0, 255, 0.05) 40%,
+                rgba(0, 255, 255, 0.015) 0%,
+                rgba(255, 0, 255, 0.01) 40%,
                 transparent 70%
             );
             transform: translate(-50%, -50%);
@@ -233,7 +233,7 @@ function createPanelStyles() {
             100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
         }
         
-        .edge-highlight {
+        .edge-highlight-ultra {
             position: absolute;
             top: 0;
             left: 0;
@@ -242,10 +242,10 @@ function createPanelStyles() {
             border-radius: 24px;
             background: linear-gradient(
                 135deg,
-                rgba(255, 255, 255, 0.15) 0%,
+                rgba(255, 255, 255, 0.02) 0%,
                 transparent 20%,
                 transparent 80%,
-                rgba(0, 255, 255, 0.1) 100%
+                rgba(0, 255, 255, 0.015) 100%
             );
             mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             mask-composite: xor;
@@ -276,14 +276,14 @@ function createPanelStyles() {
             }
         }
         
-        .panel-content {
+        .panel-content-ultra {
             position: relative;
             text-align: center;
             color: rgba(255, 255, 255, 0.95);
             z-index: 5;
         }
         
-        .panel-title {
+        .panel-title-ultra {
             position: relative;
             font-family: 'Segoe UI', 'Arial', sans-serif;
             font-size: 2.8rem;
@@ -293,7 +293,7 @@ function createPanelStyles() {
             overflow: hidden;
         }
         
-        .title-text {
+        .title-text-ultra {
             position: relative;
             background: linear-gradient(
                 135deg, 
@@ -316,7 +316,7 @@ function createPanelStyles() {
             50% { background-position: 100% 50%; }
         }
         
-        .title-shimmer {
+        .title-shimmer-ultra {
             position: absolute;
             top: 0;
             left: -100%;
@@ -336,12 +336,12 @@ function createPanelStyles() {
             100% { left: 100%; }
         }
         
-        .panel-question {
+        .panel-question-ultra {
             position: relative;
             margin-bottom: 35px;
         }
         
-        .panel-question p {
+        .panel-question-ultra p {
             font-size: 1.3rem;
             font-weight: 300;
             margin: 0 0 10px 0;
@@ -350,7 +350,7 @@ function createPanelStyles() {
             letter-spacing: 0.5px;
         }
         
-        .question-underline {
+        .question-underline-ultra {
             width: 60px;
             height: 2px;
             background: linear-gradient(90deg, #00ffff, #ff00ff);
@@ -364,18 +364,18 @@ function createPanelStyles() {
             100% { width: 80px; opacity: 1; }
         }
         
-        .panel-input-group {
+        .panel-input-group-ultra {
             position: relative;
             margin-bottom: 35px;
         }
         
-        .panel-input {
+        .panel-input-ultra {
             width: 100%;
             padding: 18px 25px;
             font-size: 1.2rem;
             font-weight: 300;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.04);
             border-radius: 15px;
             color: rgba(255, 255, 255, 0.95);
             outline: none;
@@ -385,22 +385,22 @@ function createPanelStyles() {
             letter-spacing: 0.5px;
         }
         
-        .panel-input::placeholder {
+        .panel-input-ultra::placeholder {
             color: rgba(255, 255, 255, 0.4);
             font-weight: 300;
         }
         
-        .panel-input:focus {
-            background: rgba(255, 255, 255, 0.08);
+        .panel-input-ultra:focus {
+            background: rgba(255, 255, 255, 0.02);
             border-color: rgba(0, 255, 255, 0.6);
             box-shadow: 
-                0 0 0 3px rgba(0, 255, 255, 0.2),
-                0 0 25px rgba(0, 255, 255, 0.3),
-                0 8px 25px rgba(0, 0, 0, 0.2);
+                0 0 0 3px rgba(0, 255, 255, 0.1),
+                0 0 25px rgba(0, 255, 255, 0.15),
+                0 8px 25px rgba(0, 0, 0, 0.05);
             transform: translateY(-1px);
         }
         
-        .input-glow {
+        .input-glow-ultra {
             position: absolute;
             top: 0;
             left: 0;
@@ -408,8 +408,8 @@ function createPanelStyles() {
             bottom: 0;
             border-radius: 15px;
             background: linear-gradient(45deg, 
-                rgba(0, 255, 255, 0.1),
-                rgba(255, 0, 255, 0.1)
+                rgba(0, 255, 255, 0.02),
+                rgba(255, 0, 255, 0.02)
             );
             opacity: 0;
             transition: opacity 0.4s ease;
@@ -417,20 +417,20 @@ function createPanelStyles() {
             z-index: -1;
         }
         
-        .panel-input:focus + .input-glow {
+        .panel-input-ultra:focus + .input-glow-ultra {
             opacity: 1;
         }
         
-        .panel-button {
+        .panel-button-ultra {
             position: relative;
             padding: 18px 50px;
             font-size: 1.3rem;
             font-weight: 400;
             background: linear-gradient(135deg, 
-                rgba(0, 255, 255, 0.2) 0%,
-                rgba(255, 0, 255, 0.2) 100%
+                rgba(0, 255, 255, 0.05) 0%,
+                rgba(255, 0, 255, 0.05) 100%
             );
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 50px;
             color: rgba(255, 255, 255, 0.95);
             cursor: pointer;
@@ -441,35 +441,35 @@ function createPanelStyles() {
             transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             backdrop-filter: blur(20px);
             box-shadow: 
-                0 8px 25px rgba(0, 0, 0, 0.2),
-                0 0 40px rgba(0, 255, 255, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                0 8px 25px rgba(0, 0, 0, 0.05),
+                0 0 40px rgba(0, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.02);
         }
         
-        .panel-button:hover {
+        .panel-button-ultra:hover {
             background: linear-gradient(135deg, 
-                rgba(0, 255, 255, 0.12) 0%,
-                rgba(255, 0, 255, 0.12) 100%
+                rgba(0, 255, 255, 0.08) 0%,
+                rgba(255, 0, 255, 0.08) 100%
             );
-            border-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.1);
             transform: translateY(-3px);
             box-shadow: 
-                0 12px 35px rgba(0, 0, 0, 0.15),
-                0 0 60px rgba(0, 255, 255, 0.15),
-                0 0 80px rgba(255, 0, 255, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+                0 12px 35px rgba(0, 0, 0, 0.08),
+                0 0 60px rgba(0, 255, 255, 0.1),
+                0 0 80px rgba(255, 0, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
         
-        .panel-button:active {
+        .panel-button-ultra:active {
             transform: translateY(-1px);
         }
         
-        .button-text {
+        .button-text-ultra {
             position: relative;
             z-index: 2;
         }
         
-        .button-glow {
+        .button-glow-ultra {
             position: absolute;
             top: 0;
             left: -100%;
@@ -484,11 +484,11 @@ function createPanelStyles() {
             z-index: 1;
         }
         
-        .panel-button:hover .button-glow {
+        .panel-button-ultra:hover .button-glow-ultra {
             left: 100%;
         }
         
-        .button-ripple {
+        .button-ripple-ultra {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -500,34 +500,34 @@ function createPanelStyles() {
             transition: all 0.6s ease;
         }
         
-        .panel-button:active .button-ripple {
+        .panel-button-ultra:active .button-ripple-ultra {
             width: 200px;
             height: 200px;
         }
         
         /* Responsive design */
         @media (max-width: 600px) {
-            .panel-container {
+            .panel-container-ultra {
                 padding: 35px 30px;
                 margin: 20px;
                 max-width: 95%;
             }
             
-            .panel-title {
+            .panel-title-ultra {
                 font-size: 2.2rem;
                 letter-spacing: 1px;
             }
             
-            .panel-question p {
+            .panel-question-ultra p {
                 font-size: 1.1rem;
             }
             
-            .panel-input {
+            .panel-input-ultra {
                 padding: 15px 20px;
                 font-size: 1.1rem;
             }
             
-            .panel-button {
+            .panel-button-ultra {
                 padding: 15px 40px;
                 font-size: 1.1rem;
                 letter-spacing: 1px;
@@ -535,11 +535,11 @@ function createPanelStyles() {
         }
         
         @media (max-width: 400px) {
-            .panel-container {
+            .panel-container-ultra {
                 padding: 25px 20px;
             }
             
-            .panel-title {
+            .panel-title-ultra {
                 font-size: 1.8rem;
             }
         }
@@ -612,7 +612,16 @@ export function showPanel() {
             return;
         }
         
-        // Add styles
+        // Remove any existing styles first
+        const existingStyles = document.querySelectorAll('style');
+        existingStyles.forEach(style => {
+            if (style.textContent.includes('panel-overlay') || 
+                style.textContent.includes('panel-container')) {
+                style.remove();
+            }
+        });
+        
+        // Add new styles
         const styleElement = createPanelStyles();
         document.head.appendChild(styleElement);
         
