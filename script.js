@@ -81,6 +81,13 @@ function init() {
     showLoading(20).then(() => {
         // After loading completes, we could trigger other modules here (e.g., glass panel)
         console.log("Loading finished!");
+        // Show security panel
+        showPanel().then((success) => {
+           if (success) {
+              console.log("Security check passed!");
+            // Continue with your birthday experience
+           }
+         });
     });
 }
 
