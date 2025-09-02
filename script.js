@@ -1,6 +1,7 @@
 import * as THREE from '/birthday-site/libs/three.module.js';
 import { initStarfield } from '/birthday-site/modules/starfield.js';
 import { showLoading } from '/birthday-site/modules/loading.js';
+import { showPanel } from '/birthday-site/modules/panel.js';
 
 // Scene setup
 const scene = new THREE.Scene();
