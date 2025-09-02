@@ -79,7 +79,7 @@ function init() {
     animate(0);
     
     // Show loading overlay, then fade to starfield
-    showLoading(20).then(() => {
+    showLoading(30).then(() => {
         // After loading completes, we could trigger other modules here (e.g., glass panel)
         console.log("Loading finished!");
         // Show security panel
