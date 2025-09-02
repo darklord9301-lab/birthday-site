@@ -80,8 +80,7 @@ function init() {
     // Show loading overlay, then fade to starfield
     showLoading(10).then(() => {
         // After loading completes, we could trigger other modules here (e.g., glass panel)
-    })catch(err => {
-        console.error('Loading overlay failed:', err);
+        console.log("Loading finished!");
     });
 }
 
