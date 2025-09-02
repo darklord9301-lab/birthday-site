@@ -1,79 +1,16 @@
 // /modules/panel.js
 let panelContainer = null;
-let backgroundMusic = null;
 let clickSound = null;
 let panelResolve = null;
-let musicFadeInterval = null;
 
 /**
- * Preload audio files
+ * Preload click sound
  */
 function preloadAudio() {
-    // Background music
-    backgroundMusic = new Audio('/birthday-site/assets/sounds/background.mp3');
-    backgroundMusic.loop = true;
-    backgroundMusic.volume = 0; // Start silent for fade-in
-    
-    // Click sound
+    // Click sound only
     clickSound = new Audio('/birthday-site/assets/sounds/click.mp3');
     clickSound.volume = 0.7;
-    
-    // Preload both audio files
-    backgroundMusic.preload = 'auto';
     clickSound.preload = 'auto';
-}
-
-/**
- * Fade in background music
- */
-function fadeInMusic(duration = 3000) {
-    if (!backgroundMusic) return;
-    
-    backgroundMusic.currentTime = 0;
-    backgroundMusic.play().catch(e => {
-        console.warn('Background music autoplay blocked:', e);
-    });
-    
-    const targetVolume = 0.3;
-    const steps = 50;
-    const stepDuration = duration / steps;
-    const volumeStep = targetVolume / steps;
-    let currentStep = 0;
-    
-    musicFadeInterval = setInterval(() => {
-        currentStep++;
-        backgroundMusic.volume = Math.min(volumeStep * currentStep, targetVolume);
-        
-        if (currentStep >= steps) {
-            clearInterval(musicFadeInterval);
-            musicFadeInterval = null;
-        }
-    }, stepDuration);
-}
-
-/**
- * Fade out background music
- */
-function fadeOutMusic(duration = 1000) {
-    if (!backgroundMusic || musicFadeInterval) return;
-    
-    const startVolume = backgroundMusic.volume;
-    const steps = 20;
-    const stepDuration = duration / steps;
-    const volumeStep = startVolume / steps;
-    let currentStep = 0;
-    
-    musicFadeInterval = setInterval(() => {
-        currentStep++;
-        backgroundMusic.volume = Math.max(startVolume - (volumeStep * currentStep), 0);
-        
-        if (currentStep >= steps || backgroundMusic.volume <= 0) {
-            clearInterval(musicFadeInterval);
-            musicFadeInterval = null;
-            backgroundMusic.pause();
-            backgroundMusic.currentTime = 0;
-        }
-    }, stepDuration);
 }
 
 /**
@@ -131,18 +68,19 @@ function createPanelStyles() {
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.3);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
         }
         
         .panel-overlay.visible {
             opacity: 1;
+            pointer-events: auto;
         }
         
         .panel-container {
@@ -326,9 +264,6 @@ function handleSubmit(event) {
         const overlay = document.getElementById('security-panel-overlay');
         overlay.classList.remove('visible');
         
-        // Fade out music
-        fadeOutMusic(1000);
-        
         // Resolve promise after fade out
         setTimeout(() => {
             if (panelResolve) {
@@ -394,11 +329,6 @@ export function showPanel() {
             panelContainer.classList.add('visible');
             input.focus();
         }, 100);
-        
-        // Start background music
-        setTimeout(() => {
-            fadeInMusic(3000);
-        }, 500);
     });
 }
 
@@ -416,15 +346,6 @@ export function hidePanel() {
                 uiContainer.innerHTML = '';
             }
         }, 500);
-    }
-    
-    // Stop music
-    fadeOutMusic(500);
-    
-    // Clear intervals
-    if (musicFadeInterval) {
-        clearInterval(musicFadeInterval);
-        musicFadeInterval = null;
     }
     
     // Reset resolve function
