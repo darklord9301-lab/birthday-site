@@ -38,6 +38,32 @@ export function showLoading(duration = 10) {
                 image-rendering: pixelated;
             }
 
+            #loading-progress {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.1);
+                overflow: hidden;
+            }
+
+            #loading-progress-bar {
+                height: 100%;
+                width: 0%;
+                background: linear-gradient(90deg, #4ecdc4, #45b7d1, #6c5ce7);
+                background-size: 200% 100%;
+                animation: gradient-shift 2s ease-in-out infinite;
+                transition: width 0.1s ease-out;
+                box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+            }
+
+            @keyframes gradient-shift {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+
             .fade-out {
                 opacity: 0 !important;
             }
@@ -75,16 +101,28 @@ export function showLoading(duration = 10) {
         video.disablePictureInPicture = true;
         video.setAttribute('webkit-playsinline', 'true');
         
+        // Create loading progress bar
+        const progressContainer = document.createElement('div');
+        progressContainer.id = 'loading-progress';
+        
+        const progressBar = document.createElement('div');
+        progressBar.id = 'loading-progress-bar';
+        
+        progressContainer.appendChild(progressBar);
+        
         overlay.appendChild(video);
+        overlay.appendChild(progressContainer);
         document.body.appendChild(overlay);
 
         let fadeTimeout;
         let cleanupTimeout;
+        let progressInterval;
 
         // Cleanup function
         const cleanup = () => {
             if (fadeTimeout) clearTimeout(fadeTimeout);
             if (cleanupTimeout) clearTimeout(cleanupTimeout);
+            if (progressInterval) clearInterval(progressInterval);
             
             if (overlay.parentNode) {
                 overlay.parentNode.removeChild(overlay);
@@ -129,6 +167,20 @@ export function showLoading(duration = 10) {
 
                 console.log(`Video duration: ${videoDuration}s, Target: ${duration}s, Playback rate: ${video.playbackRate}`);
 
+                // Start progress bar animation
+                let startTime = Date.now();
+                const targetDurationMs = duration * 1000;
+                
+                progressInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min((elapsed / targetDurationMs) * 100, 100);
+                    progressBar.style.width = `${progress}%`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(progressInterval);
+                    }
+                }, 16); // ~60fps updates
+
                 // Set fade out timer
                 fadeTimeout = setTimeout(startFadeOut, duration * 1000);
 
@@ -141,6 +193,10 @@ export function showLoading(duration = 10) {
         const onVideoEnded = () => {
             if (fadeTimeout) {
                 clearTimeout(fadeTimeout);
+            }
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
             }
             startFadeOut();
         };
