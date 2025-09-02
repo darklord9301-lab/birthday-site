@@ -134,7 +134,7 @@ function createPanelStyles() {
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            opacity: 0.004;
+            opacity: 0;
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             pointer-events: none;
             backdrop-filter: blur(0.5px);
@@ -448,16 +448,16 @@ function createPanelStyles() {
         
         .panel-button-ultra:hover {
             background: linear-gradient(135deg, 
-                rgba(0, 255, 255, 0.08) 0%,
-                rgba(255, 0, 255, 0.08) 100%
+                rgba(0, 255, 255, 0.12) 0%,
+                rgba(255, 0, 255, 0.12) 100%
             );
-            border-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.15);
             transform: translateY(-3px);
             box-shadow: 
-                0 12px 35px rgba(0, 0, 0, 0.08),
-                0 0 60px rgba(0, 255, 255, 0.1),
-                0 0 80px rgba(255, 0, 255, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+                0 12px 35px rgba(0, 0, 0, 0.12),
+                0 0 60px rgba(0, 255, 255, 0.15),
+                0 0 80px rgba(255, 0, 255, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
         
         .panel-button-ultra:active {
