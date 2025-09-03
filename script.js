@@ -3,6 +3,13 @@ import { initStarfield } from '/birthday-site/modules/starfield.js';
 import { showLoading } from '/birthday-site/modules/loading.js';
 import { showPanel } from '/birthday-site/modules/panel.js';
 
+// Warp → Camera transition variables
+let cameraTransitionActive = false;
+let cameraTransitionStart = 0;
+let cameraTransitionDuration = 2000; // ms
+let cameraStartZ = 0;
+let cameraTargetZ = -150; // how far forward camera moves
+
 // Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000); // pure black
