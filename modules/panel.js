@@ -3,53 +3,111 @@ let panelContainer = null;
 let clickSound = null;
 let panelResolve = null;
 let glitterInterval = null;
-let initialViewportHeight = 0;
-let panelDimensions = null;
+let fixedDimensions = null;
+let positionLocked = false;
 
-// Capture initial dimensions before any viewport changes
-function captureInitialDimensions() {
-    if (!panelDimensions) {
-        initialViewportHeight = window.innerHeight;
-        panelDimensions = {
-            width: window.innerWidth,
-            height: window.innerHeight,
-            centerX: window.innerWidth / 2,
-            centerY: window.innerHeight / 2
+/**
+ * Capture screen dimensions and lock them permanently
+ */
+function lockScreenDimensions() {
+    if (!fixedDimensions) {
+        // Get the actual rendered dimensions, not window dimensions
+        const body = document.body;
+        const html = document.documentElement;
+        
+        fixedDimensions = {
+            width: Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth),
+            height: Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight)
         };
         
-        // Set CSS custom properties for fixed dimensions
-        document.documentElement.style.setProperty('--initial-vw', `${panelDimensions.width}px`);
-        document.documentElement.style.setProperty('--initial-vh', `${panelDimensions.height}px`);
-        document.documentElement.style.setProperty('--center-x', `${panelDimensions.centerX}px`);
-        document.documentElement.style.setProperty('--center-y', `${panelDimensions.centerY}px`);
+        // Use current window dimensions as fallback
+        if (fixedDimensions.width === 0) fixedDimensions.width = window.innerWidth;
+        if (fixedDimensions.height === 0) fixedDimensions.height = window.innerHeight;
+        
+        console.log('Locked dimensions:', fixedDimensions);
     }
-}
-
-// Prevent any viewport-related changes
-function lockPanelDimensions() {
-    captureInitialDimensions();
     
-    // Force consistent dimensions regardless of viewport changes
-    const overlay = document.getElementById('security-panel-overlay');
-    if (overlay) {
-        overlay.style.width = panelDimensions.width + 'px';
-        overlay.style.height = panelDimensions.height + 'px';
+    return fixedDimensions;
+}
+
+/**
+ * Apply fixed positioning with JavaScript
+ */
+function applyFixedPositioning() {
+    if (!panelContainer || !fixedDimensions) return;
+    
+    const overlay = panelContainer;
+    const panel = overlay.querySelector('.panel-container');
+    
+    if (overlay && panel) {
+        // Set overlay to exact fixed dimensions
         overlay.style.position = 'fixed';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
+        overlay.style.top = '0px';
+        overlay.style.left = '0px';
+        overlay.style.width = fixedDimensions.width + 'px';
+        overlay.style.height = fixedDimensions.height + 'px';
+        overlay.style.zIndex = '1000';
+        overlay.style.overflow = 'hidden';
+        
+        // Center the panel manually
+        const panelWidth = 480;
+        const panelHeight = 400;
+        
+        const centerX = (fixedDimensions.width - panelWidth) / 2;
+        const centerY = (fixedDimensions.height - panelHeight) / 2;
+        
+        panel.style.position = 'absolute';
+        panel.style.left = centerX + 'px';
+        panel.style.top = centerY + 'px';
+        panel.style.width = panelWidth + 'px';
+        panel.style.transform = 'none'; // Remove all CSS transforms
+        panel.style.margin = '0';
+        panel.style.padding = '45px 55px';
+        panel.style.boxSizing = 'border-box';
     }
 }
 
-// Initialize immediately
-captureInitialDimensions();
-
-// Block viewport change events completely for the panel
-window.addEventListener('resize', (e) => {
-    if (panelContainer && panelContainer.classList.contains('visible')) {
-        e.stopPropagation();
-        lockPanelDimensions();
+/**
+ * Prevent any viewport-related events
+ */
+function blockViewportEvents() {
+    if (positionLocked) return;
+    positionLocked = true;
+    
+    // Block resize events
+    const originalResize = window.onresize;
+    window.onresize = function(e) {
+        if (panelContainer && panelContainer.classList.contains('visible')) {
+            e.stopPropagation();
+            e.preventDefault();
+            applyFixedPositioning();
+            return false;
+        }
+        if (originalResize) originalResize.call(this, e);
+    };
+    
+    // Block orientation changes
+    const originalOrientationChange = window.onorientationchange;
+    window.onorientationchange = function(e) {
+        if (panelContainer && panelContainer.classList.contains('visible')) {
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        }
+        if (originalOrientationChange) originalOrientationChange.call(this, e);
+    };
+    
+    // Block visual viewport changes (iOS Safari)
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function(e) {
+            if (panelContainer && panelContainer.classList.contains('visible')) {
+                e.stopPropagation();
+                e.preventDefault();
+                applyFixedPositioning();
+            }
+        });
     }
-});
+}
 
 /**
  * Preload click sound
@@ -159,33 +217,18 @@ function createPanelHTML() {
 }
 
 /**
- * Create completely viewport-independent panel styles
+ * Create minimal CSS - positioning handled by JavaScript
  */
 function createPanelStyles() {
     const style = document.createElement('style');
     style.textContent = `
-        /* Completely fixed overlay - no viewport dependency */
+        /* Minimal CSS - positioning controlled by JavaScript */
         .panel-overlay {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: var(--initial-vw) !important;
-            height: var(--initial-vh) !important;
             background: rgba(0, 5, 15, 0.004);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
             opacity: 0;
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             pointer-events: none;
             backdrop-filter: blur(2px);
-            overflow: hidden;
-            
-            /* Critical: Block all resize/orientation events */
-            resize: none;
-            user-select: none;
-            touch-action: manipulation;
         }
         
         .panel-overlay.visible {
@@ -193,81 +236,42 @@ function createPanelStyles() {
             pointer-events: auto;
         }
         
-        /* Absolutely positioned container - immune to viewport changes */
         .panel-container {
-            position: absolute !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) scale(0.85) !important;
-            
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 24px;
-            padding: 45px 55px;
-            
-            /* Fixed dimensions - never changes */
-            width: 480px;
-            max-width: 90vw;
-            min-height: 400px;
-            max-height: 600px;
-            
-            box-sizing: border-box;
             box-shadow: 
                 0 20px 60px rgba(0, 0, 0, 0.4),
                 0 0 80px rgba(0, 255, 255, 0.15),
                 0 0 120px rgba(255, 0, 255, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1),
                 inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-                
-            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             overflow: hidden;
-            
-            /* Lock transformation origin */
-            transform-origin: center center !important;
-            will-change: transform;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0.85);
         }
         
         .panel-overlay.visible .panel-container {
-            transform: translate(-50%, -50%) scale(1) !important;
+            transform: scale(1);
         }
         
-        /* Enhanced shake - maintains absolute positioning */
+        /* JavaScript-controlled shake animation */
         .panel-container.shake {
-            animation: absoluteShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+            animation: jsShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
         }
 
-        @keyframes absoluteShake {
-            0%, 100% { 
-                transform: translate(-50%, -50%) scale(1) translateX(0); 
-            }
-            10% { 
-                transform: translate(-50%, -50%) scale(1) translateX(-8px); 
-            }
-            20% { 
-                transform: translate(-50%, -50%) scale(1) translateX(8px); 
-            }
-            30% { 
-                transform: translate(-50%, -50%) scale(1) translateX(-6px); 
-            }
-            40% { 
-                transform: translate(-50%, -50%) scale(1) translateX(6px); 
-            }
-            50% { 
-                transform: translate(-50%, -50%) scale(1) translateX(-4px); 
-            }
-            60% { 
-                transform: translate(-50%, -50%) scale(1) translateX(4px); 
-            }
-            70% { 
-                transform: translate(-50%, -50%) scale(1) translateX(-2px); 
-            }
-            80% { 
-                transform: translate(-50%, -50%) scale(1) translateX(2px); 
-            }
-            90% { 
-                transform: translate(-50%, -50%) scale(1) translateX(-1px); 
-            }
+        @keyframes jsShake {
+            0%, 100% { transform: scale(1) translateX(0px); }
+            10% { transform: scale(1) translateX(-8px); }
+            20% { transform: scale(1) translateX(8px); }
+            30% { transform: scale(1) translateX(-6px); }
+            40% { transform: scale(1) translateX(6px); }
+            50% { transform: scale(1) translateX(-4px); }
+            60% { transform: scale(1) translateX(4px); }
+            70% { transform: scale(1) translateX(-2px); }
+            80% { transform: scale(1) translateX(2px); }
+            90% { transform: scale(1) translateX(-1px); }
         }
         
         .panel-bg-effects {
@@ -594,19 +598,8 @@ function createPanelStyles() {
             height: 200px;
         }
         
-        /* Mobile responsive - fixed pixel dimensions */
+        /* Mobile responsive adjustments */
         @media (max-width: 600px) {
-            .panel-container {
-                width: 400px !important;
-                max-width: 95vw !important;
-                padding: 35px 30px;
-                transform: translate(-50%, -50%) scale(0.85) !important;
-            }
-            
-            .panel-overlay.visible .panel-container {
-                transform: translate(-50%, -50%) scale(0.9) !important;
-            }
-            
             .panel-title {
                 font-size: 2.2rem;
                 letter-spacing: 1px;
@@ -630,40 +623,10 @@ function createPanelStyles() {
         }
         
         @media (max-width: 400px) {
-            .panel-container {
-                width: 340px !important;
-                max-width: 90vw !important;
-                padding: 25px 20px;
-                transform: translate(-50%, -50%) scale(0.8) !important;
-            }
-            
-            .panel-overlay.visible .panel-container {
-                transform: translate(-50%, -50%) scale(0.85) !important;
-            }
-            
             .panel-title {
                 font-size: 1.8rem;
                 margin-bottom: 20px;
             }
-        }
-        
-        /* Force panel stability - override any external CSS */
-        .panel-overlay * {
-            resize: none !important;
-            touch-action: manipulation !important;
-        }
-        
-        /* Prevent any layout shifts */
-        .panel-container,
-        .panel-content,
-        .panel-title,
-        .panel-question,
-        .panel-input-group,
-        .panel-input,
-        .panel-button {
-            position: relative;
-            flex-shrink: 0;
-            box-sizing: border-box;
         }
     `;
     
@@ -703,13 +666,15 @@ function handleSubmit(event) {
         
         setTimeout(() => {
             panel.classList.remove('shake');
+            // Reapply positioning after shake
+            applyFixedPositioning();
             input.focus();
         }, 600);
     }
 }
 
 /**
- * Show the security panel with fixed positioning
+ * Show the security panel with JavaScript positioning
  * @returns {Promise<boolean>} Resolves to true when correct answer is entered
  */
 export function showPanel() {
@@ -724,8 +689,9 @@ export function showPanel() {
             return;
         }
         
-        // Lock dimensions before creating panel
-        captureInitialDimensions();
+        // Lock screen dimensions first
+        lockScreenDimensions();
+        blockViewportEvents();
         
         const styleElement = createPanelStyles();
         document.head.appendChild(styleElement);
@@ -733,8 +699,8 @@ export function showPanel() {
         uiContainer.innerHTML = createPanelHTML();
         panelContainer = document.getElementById('security-panel-overlay');
         
-        // Force fixed dimensions immediately
-        lockPanelDimensions();
+        // Apply JavaScript positioning immediately
+        applyFixedPositioning();
         
         const nextButton = document.getElementById('panel-next-btn');
         const input = document.getElementById('security-answer');
@@ -746,15 +712,18 @@ export function showPanel() {
             }
         });
         
-        // Prevent any focus-related viewport changes
-        input.addEventListener('focus', (e) => {
-            e.preventDefault();
-            lockPanelDimensions();
+        // Reapply positioning on any focus events
+        input.addEventListener('focus', () => {
+            setTimeout(() => applyFixedPositioning(), 100);
+        });
+        
+        input.addEventListener('blur', () => {
+            setTimeout(() => applyFixedPositioning(), 100);
         });
         
         setTimeout(() => {
             panelContainer.classList.add('visible');
-            lockPanelDimensions(); // Lock again after visible
+            applyFixedPositioning(); // Ensure positioning after visible
             input.focus();
             setTimeout(startGlitterEffect, 500);
         }, 100);
@@ -766,6 +735,7 @@ export function showPanel() {
  */
 export function hidePanel() {
     stopGlitterEffect();
+    positionLocked = false;
     
     const overlay = document.getElementById('security-panel-overlay');
     if (overlay) {
