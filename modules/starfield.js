@@ -1,405 +1,824 @@
-import * as THREE from '/birthday-site/libs/three.module.js';
+// /modules/panel.js
+let panelContainer = null;
+let clickSound = null;
+let panelResolve = null;
+let glitterInterval = null;
+let fixedDimensions = null;
+let positionLocked = false;
+let originalViewportHeight = 0;
+let isKeyboardOpen = false;
+let repositionTimer = null;
 
 /**
- * Classic Warp Speed Starfield - Exact Match to Reference Image
- * Creates the iconic radial star streak effect with bright central convergence
- * @param {THREE.Scene} scene - The Three.js scene
- * @param {THREE.Camera} camera - The camera
- * @returns {Object} - Space environment objects and animation functions
+ * Capture screen dimensions and lock them permanently
  */
-export function initStarfield(scene, camera) {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+function lockScreenDimensions() {
+    if (!fixedDimensions) {
+        // Capture initial viewport before any keyboard interactions
+        originalViewportHeight = window.innerHeight;
+        
+        // Get the actual rendered dimensions, not window dimensions
+        const body = document.body;
+        const html = document.documentElement;
+        
+        fixedDimensions = {
+            width: Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth, window.innerWidth),
+            height: Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight, originalViewportHeight)
+        };
+        
+        // Use current window dimensions as fallback
+        if (fixedDimensions.width === 0) fixedDimensions.width = window.innerWidth;
+        if (fixedDimensions.height === 0) fixedDimensions.height = originalViewportHeight;
+        
+        console.log('Locked dimensions:', fixedDimensions);
+        console.log('Original viewport height:', originalViewportHeight);
+    }
     
-    // Configuration matching the reference
-    const config = {
-        starCount: isMobile ? 2000 : 4000,
-        brightStarCount: isMobile ? 600 : 900,
-        dustParticleCount: isMobile ? 500 : 1000,
-        maxDistance: 5000,
-        centerGlowIntensity: 2
+    return fixedDimensions;
+}
+
+/**
+ * Detect if mobile keyboard is open
+ */
+function detectKeyboard() {
+    const currentHeight = window.innerHeight;
+    const heightDiff = originalViewportHeight - currentHeight;
+    
+    // If height reduced by more than 150px, assume keyboard is open
+    isKeyboardOpen = heightDiff > 150;
+    
+    return isKeyboardOpen;
+}
+
+/**
+ * Apply ultra-fixed positioning with JavaScript - immune to all viewport changes
+ */
+function applyFixedPositioning() {
+    if (!panelContainer || !fixedDimensions) return;
+    
+    const overlay = panelContainer;
+    const panel = overlay.querySelector('.panel-container');
+    
+    if (overlay && panel) {
+        // Detect keyboard state
+        detectKeyboard();
+        
+        // Set overlay to use the original locked dimensions, never viewport dimensions
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0px';
+        overlay.style.left = '0px';
+        overlay.style.width = fixedDimensions.width + 'px';
+        overlay.style.height = fixedDimensions.height + 'px'; // Always use locked height
+        overlay.style.zIndex = '10000';
+        overlay.style.overflow = 'hidden';
+        
+        // Prevent any browser optimizations that might interfere
+        overlay.style.willChange = 'auto';
+        overlay.style.transform = 'translate3d(0,0,0)'; // Force GPU layer
+        overlay.style.backfaceVisibility = 'hidden';
+        
+        // Panel dimensions - absolutely fixed
+        const panelWidth = 480;
+        const panelHeight = 400;
+        
+        // Always center based on original locked dimensions, not current viewport
+        const centerX = (fixedDimensions.width - panelWidth) / 2;
+        const centerY = (fixedDimensions.height - panelHeight) / 2;
+        
+        // Apply absolute positioning within the overlay
+        panel.style.position = 'absolute';
+        panel.style.left = centerX + 'px';
+        panel.style.top = centerY + 'px';
+        panel.style.width = panelWidth + 'px';
+        panel.style.height = panelHeight + 'px';
+        panel.style.transform = 'none'; // Remove all CSS transforms
+        panel.style.margin = '0';
+        panel.style.padding = '45px 55px';
+        panel.style.boxSizing = 'border-box';
+        
+        // Force GPU acceleration and prevent subpixel rendering
+        panel.style.willChange = 'auto';
+        panel.style.transform = 'translate3d(0,0,0)';
+        panel.style.backfaceVisibility = 'hidden';
+        
+        // Additional mobile-specific fixes
+        if (isKeyboardOpen) {
+            // When keyboard is open, ensure panel stays in exact same position
+            overlay.style.position = 'fixed';
+            overlay.style.height = fixedDimensions.height + 'px'; // Force original height
+            
+            // Prevent any scrolling or movement
+            document.body.style.position = 'fixed';
+            document.body.style.top = '0';
+            document.body.style.left = '0';
+            document.body.style.width = '100%';
+            document.body.style.height = fixedDimensions.height + 'px';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+}
+
+/**
+ * Lock body scroll and prevent any viewport-related interference
+ */
+function lockBodyPosition() {
+    // Prevent body scrolling completely
+    document.body.style.position = 'fixed';
+    document.body.style.top = '0';
+    document.body.style.left = '0';
+    document.body.style.width = '100%';
+    document.body.style.height = fixedDimensions.height + 'px';
+    document.body.style.overflow = 'hidden';
+    
+    // Allow touch actions on interactive elements - CRITICAL FIX
+    document.body.style.touchAction = 'manipulation';
+    document.body.style.userSelect = 'none';
+    
+    // Prevent zoom on mobile
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    }
+}
+
+/**
+ * Unlock body position
+ */
+function unlockBodyPosition() {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+    document.body.style.userSelect = '';
+}
+
+/**
+ * Prevent any viewport-related events and force repositioning
+ */
+function blockViewportEvents() {
+    if (positionLocked) return;
+    positionLocked = true;
+    
+    // Aggressive repositioning function
+    function forceReposition() {
+        if (panelContainer && panelContainer.classList.contains('visible')) {
+            applyFixedPositioning();
+        }
+    }
+    
+    // Block and override resize events
+    const originalResize = window.onresize;
+    window.onresize = function(e) {
+        if (panelContainer && panelContainer.classList.contains('visible')) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            
+            // Clear any existing timer
+            if (repositionTimer) clearTimeout(repositionTimer);
+            
+            // Force immediate repositioning
+            forceReposition();
+            
+            // Also reposition after a short delay to catch any delayed effects
+            repositionTimer = setTimeout(forceReposition, 50);
+            
+            return false;
+        }
+        if (originalResize) originalResize.call(this, e);
     };
     
-    const spaceObjects = [];
-    const stars = [];
-    const brightStars = [];
-    const dustParticles = [];
-    
-    // === MAIN WARP STREAKS (Perfect radial lines) ===
-    const streakGeometry = new THREE.BufferGeometry();
-    const streakPositions = new Float32Array(config.starCount * 6); // 2 points per streak
-    const streakColors = new Float32Array(config.starCount * 6);
-    
-    // Initialize stars with exact radial distribution like the reference
-    for (let i = 0; i < config.starCount; i++) {
-        // Radial distribution - more stars near center, spread outward
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.pow(Math.random(), 0.6) * 2000; // Power curve for center clustering
-        
-        const star = {
-            x: Math.cos(angle) * radius,
-            y: Math.sin(angle) * radius,
-            z: -config.maxDistance - Math.random() * 2000,
-            originalX: Math.cos(angle) * radius,
-            originalY: Math.sin(angle) * radius,
-            angle: angle,
-            radius: radius,
-            speed: 3 + Math.random() * 4,
-            brightness: 0.3 + Math.random() * 0.7,
-            streakLength: 0,
-            twinkle: Math.random() * Math.PI * 2,
-            color: new THREE.Color(),
-            size: 0.8 + Math.random() * 2.5
-        };
-        
-        // Realistic star color distribution matching reference
-        const temp = Math.random();
-        if (temp < 0.05) {
-            // Hot blue stars (rare)
-            star.color.setRGB(0.7, 0.9, 1.0);
-            star.brightness *= 1.8;
-        } else if (temp < 0.15) {
-            // Blue-white
-            star.color.setRGB(0.9, 0.95, 1.0);
-            star.brightness *= 1.4;
-        } else if (temp < 0.35) {
-            // Pure white
-            star.color.setRGB(1.0, 1.0, 1.0);
-            star.brightness *= 1.2;
-        } else if (temp < 0.55) {
-            // Yellow-white (sun-like)
-            star.color.setRGB(1.0, 0.98, 0.8);
-        } else if (temp < 0.75) {
-            // Orange
-            star.color.setRGB(1.0, 0.8, 0.5);
-            star.brightness *= 0.9;
-        } else {
-            // Red (most common)
-            star.color.setRGB(1.0, 0.6, 0.3);
-            star.brightness *= 0.7;
+    // Block orientation changes
+    const originalOrientationChange = window.onorientationchange;
+    window.onorientationchange = function(e) {
+        if (panelContainer && panelContainer.classList.contains('visible')) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            forceReposition();
+            return false;
         }
-        
-        stars.push(star);
-    }
+        if (originalOrientationChange) originalOrientationChange.call(this, e);
+    };
     
-    // === BRIGHT POINT STARS ===
-    const brightGeometry = new THREE.BufferGeometry();
-    const brightPositions = new Float32Array(config.brightStarCount * 3);
-    const brightColors = new Float32Array(config.brightStarCount * 3);
-    const brightSizes = new Float32Array(config.brightStarCount);
-    
-    for (let i = 0; i < config.brightStarCount; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.pow(Math.random(), 0.8) * 1500;
-        
-        const brightStar = {
-            x: Math.cos(angle) * radius,
-            y: Math.sin(angle) * radius,
-            z: -config.maxDistance - Math.random() * 1500,
-            originalX: Math.cos(angle) * radius,
-            originalY: Math.sin(angle) * radius,
-            angle: angle,
-            radius: radius,
-            speed: 3.5 + Math.random() * 3,
-            brightness: 0.8 + Math.random() * 0.2,
-            twinkle: Math.random() * Math.PI * 2,
-            color: new THREE.Color(),
-            size: 3 + Math.random() * 6
-        };
-        
-        // Hero star colors matching reference
-        const heroType = Math.random();
-        if (heroType < 0.3) {
-            brightStar.color.setRGB(0.6, 0.9, 1.0); // Blue
-        } else if (heroType < 0.5) {
-            brightStar.color.setRGB(1.0, 1.0, 1.0); // White
-        } else if (heroType < 0.7) {
-            brightStar.color.setRGB(1.0, 0.9, 0.6); // Yellow
-        } else if (heroType < 0.9) {
-            brightStar.color.setRGB(1.0, 0.7, 0.4); // Orange
-        } else {
-            brightStar.color.setRGB(1.0, 0.5, 0.2); // Red
-        }
-        
-        brightStars.push(brightStar);
-    }
-    
-    // === SPACE DUST ===
-    const dustGeometry = new THREE.BufferGeometry();
-    const dustPositions = new Float32Array(config.dustParticleCount * 3);
-    const dustColors = new Float32Array(config.dustParticleCount * 3);
-    const dustSizes = new Float32Array(config.dustParticleCount);
-    
-    for (let i = 0; i < config.dustParticleCount; i++) {
-        const dust = {
-            x: (Math.random() - 0.5) * 6000,
-            y: (Math.random() - 0.5) * 4000,
-            z: -config.maxDistance - Math.random() * 3000,
-            speed: 1 + Math.random() * 2,
-            opacity: 0.1 + Math.random() * 0.3,
-            twinkle: Math.random() * Math.PI * 2
-        };
-        
-        dustParticles.push(dust);
-        
-        const dustColor = Math.random();
-        let r, g, b;
-        if (dustColor < 0.4) {
-            r = 0.5; g = 0.7; b = 1.0; // Blue
-        } else if (dustColor < 0.7) {
-            r = 1.0; g = 0.8; b = 0.6; // Orange
-        } else {
-            r = 0.8; g = 0.8; b = 0.8; // White
-        }
-        
-        dustColors[i * 3] = r * dust.opacity;
-        dustColors[i * 3 + 1] = g * dust.opacity;
-        dustColors[i * 3 + 2] = b * dust.opacity;
-        dustSizes[i] = 0.5 + Math.random() * 1.5;
-    }
-    
-    dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
-    dustGeometry.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
-    dustGeometry.setAttribute('size', new THREE.BufferAttribute(dustSizes, 1));
-    
-    const dustMaterial = new THREE.PointsMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending,
-        sizeAttenuation: true
-    });
-    
-    const spaceDust = new THREE.Points(dustGeometry, dustMaterial);
-    scene.add(spaceDust);
-    spaceObjects.push(spaceDust);
-    
-    let warpSpeed = 1;
-    let targetWarpSpeed = 1;
-    let time = 0;
-    
-    function updateStarPositions() {
-        // Update main star streaks - exact match to reference behavior
-        for (let i = 0; i < config.starCount; i++) {
-            const star = stars[i];
-            const i6 = i * 6;
-            
-            // Move star forward
-            star.z += star.speed * warpSpeed * 0.5;
-            
-            // Reset if too close
-            if (star.z > 200) {
-                star.z = -config.maxDistance - Math.random() * 2000;
+    // Handle visual viewport changes (critical for iOS Safari keyboard)
+    if (window.visualViewport) {
+        const handleVisualViewportChange = function(e) {
+            if (panelContainer && panelContainer.classList.contains('visible')) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
                 
-                // Redistribute in radial pattern
-                const newAngle = Math.random() * Math.PI * 2;
-                const newRadius = Math.pow(Math.random(), 0.6) * 2000;
-                star.x = Math.cos(newAngle) * newRadius;
-                star.y = Math.sin(newAngle) * newRadius;
-                star.originalX = star.x;
-                star.originalY = star.y;
-                star.angle = newAngle;
-                star.radius = newRadius;
+                // Force repositioning on viewport changes
+                if (repositionTimer) clearTimeout(repositionTimer);
+                forceReposition();
+                repositionTimer = setTimeout(forceReposition, 100);
             }
-            
-            // Calculate distance from center for perspective
-            const distanceFromCenter = Math.sqrt(star.x * star.x + star.y * star.y);
-            const perspective = Math.max(0.1, 1 - (star.z + config.maxDistance) / (config.maxDistance * 3));
-            
-            // Direction from center
-            const dirX = distanceFromCenter > 0 ? star.x / distanceFromCenter : 0;
-            const dirY = distanceFromCenter > 0 ? star.y / distanceFromCenter : 0;
-            
-            // Calculate streak length based on speed and distance
-            const baseStreakLength = 80 + warpSpeed * 30;
-            const streakLength = baseStreakLength * perspective * (1 + distanceFromCenter / 800);
-            
-            // Star position (front of streak)
-            streakPositions[i6] = star.x;
-            streakPositions[i6 + 1] = star.y;
-            streakPositions[i6 + 2] = star.z;
-            
-            // Streak tail (behind the star, radiating outward from center)
-            streakPositions[i6 + 3] = star.x - dirX * streakLength;
-            streakPositions[i6 + 4] = star.y - dirY * streakLength;
-            streakPositions[i6 + 5] = star.z - streakLength * 0.2;
-            
-            // Twinkling effect
-            star.twinkle += 0.02 + warpSpeed * 0.01;
-            const twinkleIntensity = 0.7 + Math.sin(star.twinkle) * 0.3;
-            
-            // Color and brightness based on perspective and twinkle
-            const intensity = star.brightness * twinkleIntensity * perspective * Math.min(2, 0.5 + warpSpeed / 8);
-            const frontIntensity = intensity;
-            const trailIntensity = intensity * 0.1; // Very dim trail
-            
-            // Front point (bright star)
-            streakColors[i6] = star.color.r * frontIntensity;
-            streakColors[i6 + 1] = star.color.g * frontIntensity;
-            streakColors[i6 + 2] = star.color.b * frontIntensity;
-            
-            // Trail point (dim)
-            streakColors[i6 + 3] = star.color.r * trailIntensity;
-            streakColors[i6 + 4] = star.color.g * trailIntensity;
-            streakColors[i6 + 5] = star.color.b * trailIntensity;
+        };
+        
+        window.visualViewport.addEventListener('resize', handleVisualViewportChange, { passive: false });
+        window.visualViewport.addEventListener('scroll', handleVisualViewportChange, { passive: false });
+    }
+    
+    // Handle window scroll events
+    const handleScroll = function(e) {
+        if (panelContainer && panelContainer.classList.contains('visible')) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            window.scrollTo(0, 0); // Force scroll to top
+            forceReposition();
+            return false;
         }
-        
-        // Update bright hero stars
-        for (let i = 0; i < config.brightStarCount; i++) {
-            const star = brightStars[i];
-            
-            star.z += star.speed * warpSpeed * 0.6;
-            
-            if (star.z > 150) {
-                star.z = -config.maxDistance - Math.random() * 1500;
-                const newAngle = Math.random() * Math.PI * 2;
-                const newRadius = Math.pow(Math.random(), 0.8) * 1500;
-                star.x = Math.cos(newAngle) * newRadius;
-                star.y = Math.sin(newAngle) * newRadius;
-            }
-            
-            star.twinkle += 0.03;
-            const twinkle = 0.8 + Math.sin(star.twinkle) * 0.2;
-            const perspective = Math.max(0.1, 1 - (star.z + config.maxDistance) / (config.maxDistance * 2));
-            
-            brightPositions[i * 3] = star.x;
-            brightPositions[i * 3 + 1] = star.y;
-            brightPositions[i * 3 + 2] = star.z;
-            
-            const intensity = star.brightness * twinkle * perspective * (1 + warpSpeed / 10);
-            
-            brightColors[i * 3] = star.color.r * intensity;
-            brightColors[i * 3 + 1] = star.color.g * intensity;
-            brightColors[i * 3 + 2] = star.color.b * intensity;
-            
-            brightSizes[i] = star.size * perspective * (1 + intensity * 0.3);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: false, capture: true });
+    document.addEventListener('scroll', handleScroll, { passive: false, capture: true });
+    
+    // Handle focus events that might trigger keyboard
+    const handleFocusEvents = function(e) {
+        if (panelContainer && panelContainer.classList.contains('visible')) {
+            // Allow the focus, but force repositioning
+            setTimeout(() => {
+                forceReposition();
+                // Double-check positioning after potential keyboard animation
+                setTimeout(forceReposition, 300);
+            }, 10);
         }
-        
-        // Update space dust
-        for (let i = 0; i < config.dustParticleCount; i++) {
-            const dust = dustParticles[i];
-            
-            dust.z += dust.speed * warpSpeed * 0.3;
-            
-            if (dust.z > 100) {
-                dust.x = (Math.random() - 0.5) * 6000;
-                dust.y = (Math.random() - 0.5) * 4000;
-                dust.z = -config.maxDistance * 2;
-            }
-            
-            dustPositions[i * 3] = dust.x;
-            dustPositions[i * 3 + 1] = dust.y;
-            dustPositions[i * 3 + 2] = dust.z;
-        }
-    }
+    };
     
-    // Create streak lines
-    streakGeometry.setAttribute('position', new THREE.BufferAttribute(streakPositions, 3));
-    streakGeometry.setAttribute('color', new THREE.BufferAttribute(streakColors, 3));
-    
-    const streakMaterial = new THREE.LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 1.0,
-        blending: THREE.AdditiveBlending,
-        linewidth: isMobile ? 1 : 2
-    });
-    
-    const starStreaks = new THREE.LineSegments(streakGeometry, streakMaterial);
-    scene.add(starStreaks);
-    spaceObjects.push(starStreaks);
-    
-    // Create bright point stars
-    brightGeometry.setAttribute('position', new THREE.BufferAttribute(brightPositions, 3));
-    brightGeometry.setAttribute('color', new THREE.BufferAttribute(brightColors, 3));
-    brightGeometry.setAttribute('size', new THREE.BufferAttribute(brightSizes, 1));
-    
-    const brightMaterial = new THREE.PointsMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 1.0,
-        blending: THREE.AdditiveBlending,
-        sizeAttenuation: true
-    });
-    
-    const brightPoints = new THREE.Points(brightGeometry, brightMaterial);
-    scene.add(brightPoints);
-    spaceObjects.push(brightPoints);
-    
-    // === DARK SPACE BACKGROUND ===
-    const backgroundGeometry = new THREE.SphereGeometry(5000, 32, 32);
-    const backgroundMaterial = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(0.01, 0.01, 0.02),
-        side: THREE.BackSide
-    });
-    const spaceBackground = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-    scene.add(spaceBackground);
-    spaceObjects.push(spaceBackground);
-    
-    // Control functions
-    function startWarp() {
-        targetWarpSpeed = 8;
-    }
-    
-    function stopWarp() {
-        targetWarpSpeed = 2;
-    }
-    
-    function setWarpSpeed(speed) {
-        warpSpeed = speed;
-        targetWarpSpeed = speed;
-    }
-    
-    // Main animation function
-    function animate(deltaTime) {
-        time += deltaTime * 0.001;
-        
-        // Smooth warp speed transitions
-        warpSpeed += (targetWarpSpeed - warpSpeed) * 0.02;
-        
-        updateStarPositions();
-        
-        // Update buffer attributes
-        streakGeometry.attributes.position.needsUpdate = true;
-        streakGeometry.attributes.color.needsUpdate = true;
-        brightGeometry.attributes.position.needsUpdate = true;
-        brightGeometry.attributes.color.needsUpdate = true;
-        brightGeometry.attributes.size.needsUpdate = true;
-        dustGeometry.attributes.position.needsUpdate = true;
-        
-        // Subtle camera movement for immersion
-        if (camera.position) {
-            camera.position.x = Math.sin(time * 0.1) * 2;
-            camera.position.y = Math.cos(time * 0.07) * 1;
-        }
-    }
-    
-    function dispose() {
-        spaceObjects.forEach(obj => {
-            scene.remove(obj);
-            if (obj.geometry) obj.geometry.dispose();
-            if (obj.material) {
-                if (obj.material.map) obj.material.map.dispose();
-                obj.material.dispose();
-            }
+    document.addEventListener('focusin', handleFocusEvents, true);
+    document.addEventListener('focusout', handleFocusEvents, true);
+}
+
+/**
+ * Preload click sound
+ */
+function preloadAudio() {
+    clickSound = new Audio('/birthday-site/assets/sounds/click.mp3');
+    clickSound.volume = 0.7;
+    clickSound.preload = 'auto';
+}
+
+/**
+ * Play click sound
+ */
+function playClickSound() {
+    if (clickSound) {
+        clickSound.currentTime = 0;
+        clickSound.play().catch(e => {
+            console.warn('Click sound failed to play:', e);
         });
     }
-    
-    return {
-        starStreaks,
-        brightPoints,
-        spaceDust,
-        spaceObjects,
-        animate,
-        dispose,
-        startWarp,
-        stopWarp,
-        setWarpSpeed,
-        getCurrentSpeed: () => warpSpeed,
-        isMobile,
-        // Expose star data for external manipulation if needed
-        stars,
-        brightStars,
-        dustParticles,
-        config
-    };
 }
+
+/**
+ * Create glitter particles
+ */
+function createGlitterEffect() {
+    const container = document.querySelector('.panel-container');
+    if (!container) return;
+
+    for (let i = 0; i < 8; i++) {
+        const glitter = document.createElement('div');
+        glitter.className = 'glitter-particle';
+        
+        glitter.style.left = Math.random() * 100 + '%';
+        glitter.style.top = Math.random() * 100 + '%';
+        glitter.style.animationDelay = Math.random() * 3 + 's';
+        glitter.style.animationDuration = (2 + Math.random() * 2) + 's';
+        
+        container.appendChild(glitter);
+        
+        setTimeout(() => {
+            if (glitter.parentNode) {
+                glitter.parentNode.removeChild(glitter);
+            }
+        }, 5000);
+    }
+}
+
+/**
+ * Start continuous glitter effect
+ */
+function startGlitterEffect() {
+    createGlitterEffect();
+    glitterInterval = setInterval(createGlitterEffect, 1500);
+}
+
+/**
+ * Stop glitter effect
+ */
+function stopGlitterEffect() {
+    if (glitterInterval) {
+        clearInterval(glitterInterval);
+        glitterInterval = null;
+    }
+}
+
+/**
+ * Create panel HTML structure
+ */
+function createPanelHTML() {
+    return `
+        <div class="panel-overlay" id="security-panel-overlay">
+            <div class="panel-container" id="security-panel">
+                <div class="panel-bg-effects">
+                    <div class="glass-reflection"></div>
+                    <div class="cosmic-glow"></div>
+                    <div class="edge-highlight"></div>
+                </div>
+                <div class="panel-content">
+                    <h1 class="panel-title">
+                        <span class="title-text">Security Check</span>
+                        <div class="title-shimmer"></div>
+                    </h1>
+                    <div class="panel-question">
+                        <p>Nickname given to you by Aditya.</p>
+                        <div class="question-underline"></div>
+                    </div>
+                    <div class="panel-input-group">
+                        <input 
+                            type="text" 
+                            id="security-answer" 
+                            class="panel-input" 
+                            placeholder="Enter your answer"
+                            autocomplete="off"
+                            autocapitalize="none"
+                            spellcheck="false"
+                        />
+                        <div class="input-glow"></div>
+                    </div>
+                    <button id="panel-next-btn" class="panel-button">
+                        <span class="button-text">Next</span>
+                        <div class="button-glow"></div>
+                        <div class="button-ripple"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Create enhanced CSS with mobile-specific fixes
+ */
+function createPanelStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Ultra-fixed positioning - immune to viewport changes */
+        .panel-overlay {
+            background: rgba(0, 5, 15, 0.004);
+            opacity: 0;
+            transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+            
+            /* Mobile-specific fixes */
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: none;
+            /* CRITICAL: Allow touch actions for interactive elements */
+            touch-action: manipulation;
+        }
+        
+        .panel-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .panel-container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                0 0 80px rgba(0, 255, 255, 0.15),
+                0 0 120px rgba(255, 0, 255, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0.85);
+            
+            /* Prevent any mobile browser optimizations that could interfere */
+            -webkit-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            
+            /* CRITICAL: Allow touch interactions */
+            touch-action: manipulation;
+            /* Allow text selection in input */
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+        
+        .panel-overlay.visible .panel-container {
+            transform: scale(1);
+        }
+        
+        /* Enhanced shake animation that maintains exact positioning */
+        .panel-container.shake {
+            animation: ultraStableShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+        }
+
+        @keyframes ultraStableShake {
+            0% { transform: scale(1) translate3d(0px, 0px, 0px); }
+            10% { transform: scale(1) translate3d(-8px, 0px, 0px); }
+            20% { transform: scale(1) translate3d(8px, 0px, 0px); }
+            30% { transform: scale(1) translate3d(-6px, 0px, 0px); }
+            40% { transform: scale(1) translate3d(6px, 0px, 0px); }
+            50% { transform: scale(1) translate3d(-4px, 0px, 0px); }
+            60% { transform: scale(1) translate3d(4px, 0px, 0px); }
+            70% { transform: scale(1) translate3d(-2px, 0px, 0px); }
+            80% { transform: scale(1) translate3d(2px, 0px, 0px); }
+            90% { transform: scale(1) translate3d(-1px, 0px, 0px); }
+            100% { transform: scale(1) translate3d(0px, 0px, 0px); }
+        }
+        
+        .panel-bg-effects {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+        
+        .glass-reflection {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.03) 50%,
+                transparent 70%
+            );
+            animation: glassReflection 4s ease-in-out infinite;
+        }
+        
+        @keyframes glassReflection {
+            0%, 100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .cosmic-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 120%;
+            background: radial-gradient(
+                ellipse at center,
+                rgba(0, 255, 255, 0.08) 0%,
+                rgba(255, 0, 255, 0.05) 40%,
+                transparent 70%
+            );
+            transform: translate(-50%, -50%);
+            animation: cosmicPulse 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes cosmicPulse {
+            0% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.95); }
+            100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+        }
+        
+        .edge-highlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 24px;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.15) 0%,
+                transparent 20%,
+                transparent 80%,
+                rgba(0, 255, 255, 0.1) 100%
+            );
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: xor;
+            padding: 1px;
+        }
+        
+        .glitter-particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: glitterSparkle 2s linear infinite;
+            z-index: 10;
+        }
+        
+        @keyframes glitterSparkle {
+            0%, 100% { 
+                opacity: 0; 
+                transform: scale(0) rotate(0deg);
+                box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+            }
+            50% { 
+                opacity: 1; 
+                transform: scale(1) rotate(180deg);
+                box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+            }
+        }
+        
+        .panel-content {
+            position: relative;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.95);
+            z-index: 5;
+        }
+        
+        .panel-title {
+            position: relative;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 300;
+            margin: 0 0 35px 0;
+            letter-spacing: 3px;
+            overflow: hidden;
+        }
+        
+        .title-text {
+            position: relative;
+            background: linear-gradient(
+                135deg, 
+                #ffffff 0%,
+                #00ffff 25%,
+                #ffffff 50%,
+                #ff00ff 75%,
+                #ffffff 100%
+            );
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGradient 4s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes titleGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .title-shimmer {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+            animation: titleShimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes titleShimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .panel-question {
+            position: relative;
+            margin-bottom: 35px;
+        }
+        
+        .panel-question p {
+            font-size: 1.3rem;
+            font-weight: 300;
+            margin: 0 0 10px 0;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            letter-spacing: 0.5px;
+        }
+        
+        .question-underline {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            margin: 0 auto;
+            border-radius: 1px;
+            animation: underlinePulse 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes underlinePulse {
+            0% { width: 40px; opacity: 0.6; }
+            100% { width: 80px; opacity: 1; }
+        }
+        
+        .panel-input-group {
+            position: relative;
+            margin-bottom: 35px;
+        }
+        
+        .panel-input {
+            width: 100%;
+            padding: 18px 25px;
+            font-size: 1.2rem;
+            font-weight: 300;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            color: rgba(255, 255, 255, 0.95);
+            outline: none;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            backdrop-filter: blur(15px);
+            box-sizing: border-box;
+            letter-spacing: 0.5px;
+            
+            /* Mobile-specific input fixes */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            -webkit-user-select: text;
+            user-select: text;
+            touch-action: manipulation;
+        }
+        
+        .panel-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 300;
+        }
+        
+        .panel-input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 255, 255, 0.6);
+            box-shadow: 
+                0 0 0 3px rgba(0, 255, 255, 0.2),
+                0 0 25px rgba(0, 255, 255, 0.3),
+                0 8px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .input-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 15px;
+            background: linear-gradient(45deg, 
+                rgba(0, 255, 255, 0.1),
+                rgba(255, 0, 255, 0.1)
+            );
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .panel-input:focus + .input-glow {
+            opacity: 1;
+        }
+        
+        .panel-button {
+            position: relative;
+            padding: 18px 50px;
+            font-size: 1.3rem;
+            font-weight: 400;
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 255, 0.2) 0%,
+                rgba(255, 0, 255, 0.2) 100%
+            );
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            color: rgba(255, 255, 255, 0.95);
+            cursor: pointer;
+            outline: none;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.2),
+                0 0 40px rgba(0, 255, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            
+            /* CRITICAL: Mobile touch optimizations */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            /* Ensure button is clickable */
+            pointer-events: auto;
+            /* Large touch target for mobile */
+            min-height: 60px;
+            min-width: 120px;
+        }
+        
+        .panel-button:hover {
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 255, 0.12) 0%,
+                rgba(255, 0, 255, 0.12) 100%
+            );
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 12px 35px rgba(0, 0, 0, 0.15),
+                0 0 60px rgba(0, 255, 255, 0.15),
+                0 0 80px rgba(255, 0, 255, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        
+        .panel-button:active {
+            transform: translateY(-1px);
+            /* Visual feedback for touch */
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 255, 0.15) 0%,
+                rgba(255, 0, 255, 0.15) 100%
+            );
+        }
+        
+        .button-text {
+            position: relative;
+            z-index: 2;
+            pointer-events: none; /* Let clicks pass through to button */
+        }
+        
+        .button-glow {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.3), 
+                transparent
+            );
+            transition: left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .panel-button:hover .button-glow {
+            left: 100%;
+        }
+        
+        .button-ripple {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.6s ease;
+            pointer-events: none;
+        }
+        
+        .panel-button:active .button-ripple {
+            width: 200px;
+            height: 200px;
+        }
+        
+        /* Enhanced mobile responsive adjustments */
+        @media (max-width: 600px) {
+            .panel-title {
+                font-size: 2.2rem;
+                letter-spacing: 1px;
+                margin-bottom: 25px;
+            }
+            
+            .panel-question p {
+                font-size: 1.1rem;
+            }
+            
+            .panel-input {
+                padding: 15px 20px;
+                font-size: 1.1rem;
+            }
+            
+            .panel-button {
+                padding: 15px 40px;
+                font-size: 1.1rem;
+                letter-spacing: 1px;
+                /* Larger touch target on small screens */
+                min-height: 56px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .panel-title {
+                font-size: 1.8rem;
+                margin-bottom: 20px;
+            }
+        }
+        
+        /* Landscape orientation fixes for mobile */
+        @media (
