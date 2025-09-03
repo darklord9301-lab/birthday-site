@@ -4,57 +4,57 @@ let clickSound = null;
 let panelResolve = null;
 let glitterInterval = null;
 let initialViewportHeight = 0;
+let panelDimensions = null;
 
-// Enhanced viewport height locking with keyboard detection
-function lockViewportHeight() {
-    // Store initial height before any keyboard interactions
-    if (initialViewportHeight === 0) {
+// Capture initial dimensions before any viewport changes
+function captureInitialDimensions() {
+    if (!panelDimensions) {
         initialViewportHeight = window.innerHeight;
+        panelDimensions = {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            centerX: window.innerWidth / 2,
+            centerY: window.innerHeight / 2
+        };
+        
+        // Set CSS custom properties for fixed dimensions
+        document.documentElement.style.setProperty('--initial-vw', `${panelDimensions.width}px`);
+        document.documentElement.style.setProperty('--initial-vh', `${panelDimensions.height}px`);
+        document.documentElement.style.setProperty('--center-x', `${panelDimensions.centerX}px`);
+        document.documentElement.style.setProperty('--center-y', `${panelDimensions.centerY}px`);
     }
-    
-    // Use the initial height consistently
-    document.documentElement.style.setProperty('--vh', `${initialViewportHeight * 0.01}px`);
-    document.documentElement.style.setProperty('--initial-vh', `${initialViewportHeight}px`);
 }
 
-// Enhanced keyboard detection and handling
-function handleViewportChange() {
-    const currentHeight = window.innerHeight;
-    const heightDifference = initialViewportHeight - currentHeight;
+// Prevent any viewport-related changes
+function lockPanelDimensions() {
+    captureInitialDimensions();
     
-    // Detect keyboard (significant height reduction on mobile)
-    const isKeyboardOpen = heightDifference > 150 && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isKeyboardOpen) {
-        // When keyboard is open, lock the panel position more aggressively
-        document.documentElement.classList.add('keyboard-open');
-        // Force the panel to use fixed positioning relative to initial viewport
-        document.documentElement.style.setProperty('--keyboard-offset', `${Math.min(heightDifference / 2, 100)}px`);
-    } else {
-        document.documentElement.classList.remove('keyboard-open');
-        document.documentElement.style.setProperty('--keyboard-offset', '0px');
+    // Force consistent dimensions regardless of viewport changes
+    const overlay = document.getElementById('security-panel-overlay');
+    if (overlay) {
+        overlay.style.width = panelDimensions.width + 'px';
+        overlay.style.height = panelDimensions.height + 'px';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
     }
-    
-    // Always maintain the original viewport height
-    lockViewportHeight();
 }
 
-// Initialize viewport handling
-lockViewportHeight();
-window.addEventListener('resize', handleViewportChange);
-window.addEventListener('orientationchange', () => {
-    // Reset on orientation change
-    setTimeout(() => {
-        initialViewportHeight = window.innerHeight;
-        lockViewportHeight();
-    }, 500);
+// Initialize immediately
+captureInitialDimensions();
+
+// Block viewport change events completely for the panel
+window.addEventListener('resize', (e) => {
+    if (panelContainer && panelContainer.classList.contains('visible')) {
+        e.stopPropagation();
+        lockPanelDimensions();
+    }
 });
 
 /**
  * Preload click sound
  */
 function preloadAudio() {
-    // Click sound only
     clickSound = new Audio('/birthday-site/assets/sounds/click.mp3');
     clickSound.volume = 0.7;
     clickSound.preload = 'auto';
@@ -79,22 +79,17 @@ function createGlitterEffect() {
     const container = document.querySelector('.panel-container');
     if (!container) return;
 
-    // Create multiple glitter particles
     for (let i = 0; i < 8; i++) {
         const glitter = document.createElement('div');
         glitter.className = 'glitter-particle';
         
-        // Random position
         glitter.style.left = Math.random() * 100 + '%';
         glitter.style.top = Math.random() * 100 + '%';
-        
-        // Random animation delay
         glitter.style.animationDelay = Math.random() * 3 + 's';
         glitter.style.animationDuration = (2 + Math.random() * 2) + 's';
         
         container.appendChild(glitter);
         
-        // Remove after animation
         setTimeout(() => {
             if (glitter.parentNode) {
                 glitter.parentNode.removeChild(glitter);
@@ -164,28 +159,18 @@ function createPanelHTML() {
 }
 
 /**
- * Create panel CSS styles with enhanced mobile keyboard and shake stability
+ * Create completely viewport-independent panel styles
  */
 function createPanelStyles() {
     const style = document.createElement('style');
     style.textContent = `
-        /* Enhanced viewport and keyboard handling */
-        html.keyboard-open {
-            overflow: hidden;
-        }
-        
-        html.keyboard-open body {
-            position: fixed;
-            width: 100%;
-            top: 0;
-        }
-        
+        /* Completely fixed overlay - no viewport dependency */
         .panel-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: calc(var(--vh, 1vh) * 100);
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: var(--initial-vw) !important;
+            height: var(--initial-vh) !important;
             background: rgba(0, 5, 15, 0.004);
             display: flex;
             justify-content: center;
@@ -195,17 +180,12 @@ function createPanelStyles() {
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             pointer-events: none;
             backdrop-filter: blur(2px);
-            
-            /* Enhanced stability for mobile keyboards */
             overflow: hidden;
-        }
-        
-        /* Keyboard-specific adjustments */
-        .keyboard-open .panel-overlay {
-            height: var(--initial-vh);
-            transform: translateY(calc(-1 * var(--keyboard-offset, 0px)));
-            align-items: flex-start;
-            padding-top: 10vh;
+            
+            /* Critical: Block all resize/orientation events */
+            resize: none;
+            user-select: none;
+            touch-action: manipulation;
         }
         
         .panel-overlay.visible {
@@ -213,16 +193,25 @@ function createPanelStyles() {
             pointer-events: auto;
         }
         
+        /* Absolutely positioned container - immune to viewport changes */
         .panel-container {
-            position: relative;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) scale(0.85) !important;
+            
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 24px;
             padding: 45px 55px;
-            max-width: 480px;
-            width: 90%;
-            max-height: 70vh; /* Constrain height to prevent overflow */
+            
+            /* Fixed dimensions - never changes */
+            width: 480px;
+            max-width: 90vw;
+            min-height: 400px;
+            max-height: 600px;
+            
             box-sizing: border-box;
             box-shadow: 
                 0 20px 60px rgba(0, 0, 0, 0.4),
@@ -230,67 +219,55 @@ function createPanelStyles() {
                 0 0 120px rgba(255, 0, 255, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1),
                 inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-            transform: scale(0.85) translateY(60px);
-            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             overflow: hidden;
             
-            /* Critical: Lock position during shake animation */
-            transform-origin: center center;
+            /* Lock transformation origin */
+            transform-origin: center center !important;
             will-change: transform;
         }
         
         .panel-overlay.visible .panel-container {
-            transform: scale(1) translateY(0);
+            transform: translate(-50%, -50%) scale(1) !important;
         }
         
-        /* Enhanced shake animation that maintains position stability */
+        /* Enhanced shake - maintains absolute positioning */
         .panel-container.shake {
-            animation: enhancedShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+            animation: absoluteShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
 
-        @keyframes enhancedShake {
+        @keyframes absoluteShake {
             0%, 100% { 
-                transform: scale(1) translateY(0) translateX(0); 
+                transform: translate(-50%, -50%) scale(1) translateX(0); 
             }
             10% { 
-                transform: scale(1) translateY(0) translateX(-8px); 
+                transform: translate(-50%, -50%) scale(1) translateX(-8px); 
             }
             20% { 
-                transform: scale(1) translateY(0) translateX(8px); 
+                transform: translate(-50%, -50%) scale(1) translateX(8px); 
             }
             30% { 
-                transform: scale(1) translateY(0) translateX(-6px); 
+                transform: translate(-50%, -50%) scale(1) translateX(-6px); 
             }
             40% { 
-                transform: scale(1) translateY(0) translateX(6px); 
+                transform: translate(-50%, -50%) scale(1) translateX(6px); 
             }
             50% { 
-                transform: scale(1) translateY(0) translateX(-4px); 
+                transform: translate(-50%, -50%) scale(1) translateX(-4px); 
             }
             60% { 
-                transform: scale(1) translateY(0) translateX(4px); 
+                transform: translate(-50%, -50%) scale(1) translateX(4px); 
             }
             70% { 
-                transform: scale(1) translateY(0) translateX(-2px); 
+                transform: translate(-50%, -50%) scale(1) translateX(-2px); 
             }
             80% { 
-                transform: scale(1) translateY(0) translateX(2px); 
+                transform: translate(-50%, -50%) scale(1) translateX(2px); 
             }
             90% { 
-                transform: scale(1) translateY(0) translateX(-1px); 
+                transform: translate(-50%, -50%) scale(1) translateX(-1px); 
             }
-        }
-        
-        /* Keyboard-specific panel adjustments */
-        .keyboard-open .panel-container {
-            max-height: 50vh;
-            padding: 30px 40px;
-            margin-top: 0;
-            transform: scale(0.95) translateY(0);
-        }
-        
-        .keyboard-open .panel-overlay.visible .panel-container {
-            transform: scale(0.95) translateY(0);
         }
         
         .panel-bg-effects {
@@ -617,34 +594,23 @@ function createPanelStyles() {
             height: 200px;
         }
         
-        /* Enhanced responsive design with keyboard considerations */
+        /* Mobile responsive - fixed pixel dimensions */
         @media (max-width: 600px) {
             .panel-container {
+                width: 400px !important;
+                max-width: 95vw !important;
                 padding: 35px 30px;
-                margin: 20px;
-                max-width: 95%;
-                max-height: 85vh;
+                transform: translate(-50%, -50%) scale(0.85) !important;
             }
             
-            .keyboard-open .panel-container {
-                padding: 25px 25px;
-                max-height: 60vh;
-                transform: scale(0.9) translateY(0);
-            }
-            
-            .keyboard-open .panel-overlay.visible .panel-container {
-                transform: scale(0.9) translateY(0);
+            .panel-overlay.visible .panel-container {
+                transform: translate(-50%, -50%) scale(0.9) !important;
             }
             
             .panel-title {
                 font-size: 2.2rem;
                 letter-spacing: 1px;
                 margin-bottom: 25px;
-            }
-            
-            .keyboard-open .panel-title {
-                font-size: 1.9rem;
-                margin-bottom: 20px;
             }
             
             .panel-question p {
@@ -665,55 +631,39 @@ function createPanelStyles() {
         
         @media (max-width: 400px) {
             .panel-container {
+                width: 340px !important;
+                max-width: 90vw !important;
                 padding: 25px 20px;
-                max-height: 90vh;
+                transform: translate(-50%, -50%) scale(0.8) !important;
             }
             
-            .keyboard-open .panel-container {
-                padding: 20px 18px;
-                max-height: 65vh;
-                transform: scale(0.85) translateY(0);
-            }
-            
-            .keyboard-open .panel-overlay.visible .panel-container {
-                transform: scale(0.85) translateY(0);
+            .panel-overlay.visible .panel-container {
+                transform: translate(-50%, -50%) scale(0.85) !important;
             }
             
             .panel-title {
                 font-size: 1.8rem;
                 margin-bottom: 20px;
             }
-            
-            .keyboard-open .panel-title {
-                font-size: 1.6rem;
-                margin-bottom: 15px;
-            }
         }
         
-        /* Additional stability for landscape mobile */
-        @media (max-height: 500px) and (orientation: landscape) {
-            .panel-container {
-                max-height: 95vh;
-                padding: 20px 30px;
-            }
-            
-            .keyboard-open .panel-container {
-                max-height: 85vh;
-                padding: 15px 25px;
-            }
-            
-            .panel-title {
-                font-size: 1.6rem;
-                margin-bottom: 15px;
-            }
-            
-            .panel-question {
-                margin-bottom: 20px;
-            }
-            
-            .panel-input-group {
-                margin-bottom: 20px;
-            }
+        /* Force panel stability - override any external CSS */
+        .panel-overlay * {
+            resize: none !important;
+            touch-action: manipulation !important;
+        }
+        
+        /* Prevent any layout shifts */
+        .panel-container,
+        .panel-content,
+        .panel-title,
+        .panel-question,
+        .panel-input-group,
+        .panel-input,
+        .panel-button {
+            position: relative;
+            flex-shrink: 0;
+            box-sizing: border-box;
         }
     `;
     
@@ -731,15 +681,12 @@ function handleSubmit(event) {
     const panel = document.getElementById('security-panel');
     
     if (answer === 'urmi') {
-        // Correct answer
         playClickSound();
         stopGlitterEffect();
         
-        // Fade out panel
         const overlay = document.getElementById('security-panel-overlay');
         overlay.classList.remove('visible');
         
-        // Resolve promise after fade out
         setTimeout(() => {
             if (panelResolve) {
                 panelResolve(true);
@@ -748,15 +695,12 @@ function handleSubmit(event) {
         }, 800);
         
     } else {
-        // Wrong answer - enhanced shake with position stability
         panel.classList.add('shake');
         input.value = '';
         
-        // Create extra glitter on wrong answer
         createGlitterEffect();
         createGlitterEffect();
         
-        // Remove shake class after animation and refocus
         setTimeout(() => {
             panel.classList.remove('shake');
             input.focus();
@@ -765,18 +709,14 @@ function handleSubmit(event) {
 }
 
 /**
- * Show the security panel
+ * Show the security panel with fixed positioning
  * @returns {Promise<boolean>} Resolves to true when correct answer is entered
  */
 export function showPanel() {
     return new Promise((resolve) => {
-        // Store resolve function
         panelResolve = resolve;
-        
-        // Preload audio
         preloadAudio();
         
-        // Get UI container
         const uiContainer = document.getElementById('ui-container');
         if (!uiContainer) {
             console.error('UI container not found');
@@ -784,15 +724,18 @@ export function showPanel() {
             return;
         }
         
-        // Add styles
+        // Lock dimensions before creating panel
+        captureInitialDimensions();
+        
         const styleElement = createPanelStyles();
         document.head.appendChild(styleElement);
         
-        // Create and inject panel
         uiContainer.innerHTML = createPanelHTML();
         panelContainer = document.getElementById('security-panel-overlay');
         
-        // Set up event listeners
+        // Force fixed dimensions immediately
+        lockPanelDimensions();
+        
         const nextButton = document.getElementById('panel-next-btn');
         const input = document.getElementById('security-answer');
         
@@ -803,22 +746,16 @@ export function showPanel() {
             }
         });
         
-        // Enhanced input handling for mobile keyboards
-        input.addEventListener('focus', () => {
-            // Scroll into view on mobile to ensure visibility
-            setTimeout(() => {
-                if (panelContainer) {
-                    panelContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 300);
+        // Prevent any focus-related viewport changes
+        input.addEventListener('focus', (e) => {
+            e.preventDefault();
+            lockPanelDimensions();
         });
         
-        // Show panel with animation
         setTimeout(() => {
             panelContainer.classList.add('visible');
+            lockPanelDimensions(); // Lock again after visible
             input.focus();
-            
-            // Start glitter effect after panel is visible
             setTimeout(startGlitterEffect, 500);
         }, 100);
     });
@@ -842,7 +779,6 @@ export function hidePanel() {
         }, 800);
     }
     
-    // Reset resolve function
     if (panelResolve) {
         panelResolve(false);
         panelResolve = null;
