@@ -4,6 +4,14 @@ let clickSound = null;
 let panelResolve = null;
 let glitterInterval = null;
 
+// Lock viewport height to prevent alignment issues when keyboard pops up
+function lockViewportHeight() {
+    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+}
+lockViewportHeight();
+window.addEventListener('resize', lockViewportHeight);
+
+
 /**
  * Preload click sound
  */
@@ -128,7 +136,7 @@ function createPanelStyles() {
             top: 0;
             left: 0;
             width: 100vw;
-            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
             background: rgba(0, 5, 15, 0.004);
             display: flex;
             justify-content: center;
@@ -154,6 +162,8 @@ function createPanelStyles() {
             padding: 45px 55px;
             max-width: 480px;
             width: 90%;
+            max-height: 90vh;
+            box-sizing: border-box;
             box-shadow: 
                 0 20px 60px rgba(0, 0, 0, 0.4),
                 0 0 80px rgba(0, 255, 255, 0.15),
