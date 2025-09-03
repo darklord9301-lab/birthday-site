@@ -107,7 +107,7 @@ function init() {
                console.log("Security check passed!");
                // Start warp acceleration
                if (starfield && starfield.setWarpSpeed) {
-                   starfield.setWarpSpeed(5); // jump from normal to warp speed
+                   starfield.setWarpSpeed(10); // jump from normal to warp speed
                }
 
                // Start camera push forward
