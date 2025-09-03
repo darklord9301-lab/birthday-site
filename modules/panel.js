@@ -774,13 +774,6 @@ function createPanelStyles() {
         
         /* Enhanced mobile responsive adjustments */
         @media (max-width: 600px) {
-            .panel-container {
-                min-width: 300px;
-                max-width: calc(100vw - 40px);
-                min-height: 350px;
-                padding: 35px 25px !important;
-            }
-            
             .panel-title {
                 font-size: 2.2rem;
                 letter-spacing: 1px;
@@ -794,16 +787,12 @@ function createPanelStyles() {
             .panel-input {
                 padding: 15px 20px;
                 font-size: 1.1rem;
-                min-height: 50px;
             }
             
             .panel-button {
                 padding: 15px 40px;
                 font-size: 1.1rem;
                 letter-spacing: 1px;
-                min-height: 50px;
-                cursor: pointer;
-                -webkit-tap-highlight-color: rgba(0, 255, 255, 0.3);
             }
         }
         
