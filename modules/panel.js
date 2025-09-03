@@ -170,15 +170,15 @@ function createPanelStyles() {
         }
         
         .panel-container.shake {
-            animation: shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+            animation: shakeX 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
         }
-        
-        @keyframes shake {
-            0%, 100% { transform: scale(1) translateX(0) rotate(0deg); }
-            20% { transform: scale(1) translateX(-8px) rotate(-0.5deg); }
-            40% { transform: scale(1) translateX(8px) rotate(0.5deg); }
-            60% { transform: scale(1) translateX(-6px) rotate(-0.3deg); }
-            80% { transform: scale(1) translateX(6px) rotate(0.3deg); }
+
+        @keyframes shakeX {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
         }
         
         .panel-bg-effects {
