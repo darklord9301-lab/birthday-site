@@ -53,6 +53,18 @@ function animate(time) {
     if (starfield && starfield.animate) {
         starfield.animate(deltaTime);
     }
+
+    if (cameraTransitionActive) {
+        const elapsed = time - cameraTransitionStart;
+        const t = Math.min(elapsed / cameraTransitionDuration, 1); // progress 0→1
+        camera.position.z = cameraStartZ + (cameraTargetZ - cameraStartZ) * t;
+
+        if (t >= 1) {
+            cameraTransitionActive = false;
+            console.log("Camera warp complete!");
+            // Here we can trigger Scene 2
+        }
+    }
     
     // Render the scene
     renderer.render(scene, camera);
@@ -92,8 +104,17 @@ function init() {
         // Show security panel
         showPanel().then((success) => {
            if (success) {
-              console.log("Security check passed!");
-            // Continue with your birthday experience
+               console.log("Security check passed!");
+               // Start warp acceleration
+               if (starfield && starfield.setWarpSpeed) {
+                   starfield.setWarpSpeed(5); // jump from normal to warp speed
+               }
+
+               // Start camera push forward
+               cameraTransitionActive = true;
+               cameraTransitionStart = performance.now();
+               cameraStartZ = camera.position.z;
+               
            }
          });
     });
