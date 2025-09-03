@@ -3,14 +3,52 @@ let panelContainer = null;
 let clickSound = null;
 let panelResolve = null;
 let glitterInterval = null;
+let initialViewportHeight = 0;
 
-// Lock viewport height to prevent alignment issues when keyboard pops up
+// Enhanced viewport height locking with keyboard detection
 function lockViewportHeight() {
-    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    // Store initial height before any keyboard interactions
+    if (initialViewportHeight === 0) {
+        initialViewportHeight = window.innerHeight;
+    }
+    
+    // Use the initial height consistently
+    document.documentElement.style.setProperty('--vh', `${initialViewportHeight * 0.01}px`);
+    document.documentElement.style.setProperty('--initial-vh', `${initialViewportHeight}px`);
 }
-lockViewportHeight();
-window.addEventListener('resize', lockViewportHeight);
 
+// Enhanced keyboard detection and handling
+function handleViewportChange() {
+    const currentHeight = window.innerHeight;
+    const heightDifference = initialViewportHeight - currentHeight;
+    
+    // Detect keyboard (significant height reduction on mobile)
+    const isKeyboardOpen = heightDifference > 150 && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isKeyboardOpen) {
+        // When keyboard is open, lock the panel position more aggressively
+        document.documentElement.classList.add('keyboard-open');
+        // Force the panel to use fixed positioning relative to initial viewport
+        document.documentElement.style.setProperty('--keyboard-offset', `${Math.min(heightDifference / 2, 100)}px`);
+    } else {
+        document.documentElement.classList.remove('keyboard-open');
+        document.documentElement.style.setProperty('--keyboard-offset', '0px');
+    }
+    
+    // Always maintain the original viewport height
+    lockViewportHeight();
+}
+
+// Initialize viewport handling
+lockViewportHeight();
+window.addEventListener('resize', handleViewportChange);
+window.addEventListener('orientationchange', () => {
+    // Reset on orientation change
+    setTimeout(() => {
+        initialViewportHeight = window.innerHeight;
+        lockViewportHeight();
+    }, 500);
+});
 
 /**
  * Preload click sound
@@ -126,11 +164,22 @@ function createPanelHTML() {
 }
 
 /**
- * Create panel CSS styles
+ * Create panel CSS styles with enhanced mobile keyboard and shake stability
  */
 function createPanelStyles() {
     const style = document.createElement('style');
     style.textContent = `
+        /* Enhanced viewport and keyboard handling */
+        html.keyboard-open {
+            overflow: hidden;
+        }
+        
+        html.keyboard-open body {
+            position: fixed;
+            width: 100%;
+            top: 0;
+        }
+        
         .panel-overlay {
             position: fixed;
             top: 0;
@@ -146,6 +195,17 @@ function createPanelStyles() {
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             pointer-events: none;
             backdrop-filter: blur(2px);
+            
+            /* Enhanced stability for mobile keyboards */
+            overflow: hidden;
+        }
+        
+        /* Keyboard-specific adjustments */
+        .keyboard-open .panel-overlay {
+            height: var(--initial-vh);
+            transform: translateY(calc(-1 * var(--keyboard-offset, 0px)));
+            align-items: flex-start;
+            padding-top: 10vh;
         }
         
         .panel-overlay.visible {
@@ -162,7 +222,7 @@ function createPanelStyles() {
             padding: 45px 55px;
             max-width: 480px;
             width: 90%;
-            max-height: 90vh;
+            max-height: 70vh; /* Constrain height to prevent overflow */
             box-sizing: border-box;
             box-shadow: 
                 0 20px 60px rgba(0, 0, 0, 0.4),
@@ -173,22 +233,64 @@ function createPanelStyles() {
             transform: scale(0.85) translateY(60px);
             transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             overflow: hidden;
+            
+            /* Critical: Lock position during shake animation */
+            transform-origin: center center;
+            will-change: transform;
         }
         
         .panel-overlay.visible .panel-container {
             transform: scale(1) translateY(0);
         }
         
+        /* Enhanced shake animation that maintains position stability */
         .panel-container.shake {
-            animation: shakeX 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+            animation: enhancedShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
 
-        @keyframes shakeX {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-8px); }
-            40% { transform: translateX(8px); }
-            60% { transform: translateX(-6px); }
-            80% { transform: translateX(6px); }
+        @keyframes enhancedShake {
+            0%, 100% { 
+                transform: scale(1) translateY(0) translateX(0); 
+            }
+            10% { 
+                transform: scale(1) translateY(0) translateX(-8px); 
+            }
+            20% { 
+                transform: scale(1) translateY(0) translateX(8px); 
+            }
+            30% { 
+                transform: scale(1) translateY(0) translateX(-6px); 
+            }
+            40% { 
+                transform: scale(1) translateY(0) translateX(6px); 
+            }
+            50% { 
+                transform: scale(1) translateY(0) translateX(-4px); 
+            }
+            60% { 
+                transform: scale(1) translateY(0) translateX(4px); 
+            }
+            70% { 
+                transform: scale(1) translateY(0) translateX(-2px); 
+            }
+            80% { 
+                transform: scale(1) translateY(0) translateX(2px); 
+            }
+            90% { 
+                transform: scale(1) translateY(0) translateX(-1px); 
+            }
+        }
+        
+        /* Keyboard-specific panel adjustments */
+        .keyboard-open .panel-container {
+            max-height: 50vh;
+            padding: 30px 40px;
+            margin-top: 0;
+            transform: scale(0.95) translateY(0);
+        }
+        
+        .keyboard-open .panel-overlay.visible .panel-container {
+            transform: scale(0.95) translateY(0);
         }
         
         .panel-bg-effects {
@@ -515,17 +617,34 @@ function createPanelStyles() {
             height: 200px;
         }
         
-        /* Responsive design */
+        /* Enhanced responsive design with keyboard considerations */
         @media (max-width: 600px) {
             .panel-container {
                 padding: 35px 30px;
                 margin: 20px;
                 max-width: 95%;
+                max-height: 85vh;
+            }
+            
+            .keyboard-open .panel-container {
+                padding: 25px 25px;
+                max-height: 60vh;
+                transform: scale(0.9) translateY(0);
+            }
+            
+            .keyboard-open .panel-overlay.visible .panel-container {
+                transform: scale(0.9) translateY(0);
             }
             
             .panel-title {
                 font-size: 2.2rem;
                 letter-spacing: 1px;
+                margin-bottom: 25px;
+            }
+            
+            .keyboard-open .panel-title {
+                font-size: 1.9rem;
+                margin-bottom: 20px;
             }
             
             .panel-question p {
@@ -547,10 +666,53 @@ function createPanelStyles() {
         @media (max-width: 400px) {
             .panel-container {
                 padding: 25px 20px;
+                max-height: 90vh;
+            }
+            
+            .keyboard-open .panel-container {
+                padding: 20px 18px;
+                max-height: 65vh;
+                transform: scale(0.85) translateY(0);
+            }
+            
+            .keyboard-open .panel-overlay.visible .panel-container {
+                transform: scale(0.85) translateY(0);
             }
             
             .panel-title {
                 font-size: 1.8rem;
+                margin-bottom: 20px;
+            }
+            
+            .keyboard-open .panel-title {
+                font-size: 1.6rem;
+                margin-bottom: 15px;
+            }
+        }
+        
+        /* Additional stability for landscape mobile */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .panel-container {
+                max-height: 95vh;
+                padding: 20px 30px;
+            }
+            
+            .keyboard-open .panel-container {
+                max-height: 85vh;
+                padding: 15px 25px;
+            }
+            
+            .panel-title {
+                font-size: 1.6rem;
+                margin-bottom: 15px;
+            }
+            
+            .panel-question {
+                margin-bottom: 20px;
+            }
+            
+            .panel-input-group {
+                margin-bottom: 20px;
             }
         }
     `;
@@ -586,18 +748,18 @@ function handleSubmit(event) {
         }, 800);
         
     } else {
-        // Wrong answer - shake panel and create burst of glitter
+        // Wrong answer - enhanced shake with position stability
         panel.classList.add('shake');
         input.value = '';
-        input.focus();
         
         // Create extra glitter on wrong answer
         createGlitterEffect();
         createGlitterEffect();
         
-        // Remove shake class after animation
+        // Remove shake class after animation and refocus
         setTimeout(() => {
             panel.classList.remove('shake');
+            input.focus();
         }, 600);
     }
 }
@@ -639,6 +801,16 @@ export function showPanel() {
             if (e.key === 'Enter') {
                 handleSubmit(e);
             }
+        });
+        
+        // Enhanced input handling for mobile keyboards
+        input.addEventListener('focus', () => {
+            // Scroll into view on mobile to ensure visibility
+            setTimeout(() => {
+                if (panelContainer) {
+                    panelContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
         });
         
         // Show panel with animation
