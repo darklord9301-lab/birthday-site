@@ -2,6 +2,7 @@ import * as THREE from '/birthday-site/libs/three.module.js';
 import { initStarfield } from '/birthday-site/modules/starfield.js';
 import { showLoading } from '/birthday-site/modules/loading.js';
 import { showPanel } from '/birthday-site/modules/panel.js';
+import { initScene2 } from '/birthday-site/modules/scene_2.js';
 
 // Warp → Camera transition variables
 let cameraTransitionActive = false;
