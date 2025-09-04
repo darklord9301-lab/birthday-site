@@ -13,6 +13,7 @@ let currentBlockIndex = 0;
 let isTyping = false;
 let isWaitingForInput = false;
 let typewriterTimeout = null;
+let isTransitioning = false; // New flag to prevent multiple transitions
 
 // Audio system
 let backgroundMusic = null;
@@ -32,6 +33,10 @@ let touchStartY = 0;
 let touchStartTime = 0;
 const SWIPE_THRESHOLD = 50;
 const SWIPE_TIME_THRESHOLD = 300;
+
+// Love scene elements
+let loveSceneContainer = null;
+let loveTextElement = null;
 
 // Text blocks for easy editing
 const textBlocks = [
@@ -168,6 +173,42 @@ function createHintStyles() {
     };
 }
 
+// Create love scene container styles
+function createLoveSceneStyles() {
+    return {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#000000',
+        zIndex: '20',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transform: 'translateX(100%)',
+        transition: 'transform 1s ease-out'
+    };
+}
+
+// Create love text styles
+function createLoveTextStyles() {
+    return {
+        fontSize: 'clamp(2rem, 5vw, 4rem)',
+        fontWeight: 'bold',
+        color: '#ffffff',
+        textShadow: `
+            0 0 20px rgba(255, 182, 193, 0.8),
+            0 0 40px rgba(255, 182, 193, 0.6),
+            0 0 60px rgba(255, 182, 193, 0.4),
+            0 2px 10px rgba(0, 0, 0, 0.3)
+        `,
+        textAlign: 'center',
+        letterSpacing: '0.05em',
+        fontFamily: '"Segoe UI", "Helvetica Neue", Arial, sans-serif'
+    };
+}
+
 // Add CSS animations
 function addAnimationStyles() {
     if (document.getElementById('scene2-glass-styles')) return;
@@ -214,6 +255,11 @@ function addAnimationStyles() {
                 transform: translateX(0) scale(1); 
                 filter: blur(0px);
             }
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
         }
     `;
     document.head.appendChild(style);
@@ -288,6 +334,45 @@ async function typeBlock(text) {
     }, 500);
 }
 
+// Typewriter effect for love scene
+async function typeLoveText(text) {
+    if (!loveTextElement) return;
+    
+    const words = text.split(' ');
+    let currentText = '';
+    
+    for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
+        const word = words[wordIndex];
+        
+        // Type each character in the word
+        for (let charIndex = 0; charIndex <= word.length; charIndex++) {
+            if (!loveSceneContainer) return; // Exit if love scene was disposed
+            
+            const wordProgress = word.substring(0, charIndex);
+            const fullText = wordIndex > 0 
+                ? currentText + ' ' + wordProgress 
+                : wordProgress;
+            
+            loveTextElement.textContent = fullText;
+            
+            // 150ms per character
+            await new Promise(resolve => {
+                setTimeout(resolve, 150);
+            });
+        }
+        
+        // Add the completed word to current text
+        currentText = wordIndex > 0 ? currentText + ' ' + word : word;
+        
+        // Pause after each word (300ms)
+        if (wordIndex < words.length - 1) {
+            await new Promise(resolve => {
+                setTimeout(resolve, 300);
+            });
+        }
+    }
+}
+
 // Wipe animation before next block
 async function wipeCurrentText() {
     if (!textContainer) return;
@@ -304,17 +389,103 @@ async function wipeCurrentText() {
     });
 }
 
+// Transition to love scene
+async function transitionToLoveScene() {
+    if (isTransitioning) return;
+    
+    console.log('Starting transition to love scene');
+    isTransitioning = true;
+    
+    // Hide hint immediately
+    hideHint();
+    
+    // Step 1: Fade out glass panel and background over 800ms
+    if (glassPanel) {
+        Object.assign(glassPanel.style, {
+            animation: 'fadeOut 800ms ease-out forwards'
+        });
+    }
+    
+    // Also fade out the container to fade the background
+    if (container) {
+        Object.assign(container.style, {
+            animation: 'fadeOut 800ms ease-out forwards'
+        });
+    }
+    
+    // Wait for fade out to complete
+    await new Promise(resolve => {
+        setTimeout(resolve, 800);
+    });
+    
+    // Step 2: Dispose the current scene
+    console.log('Disposing Scene 2 for love transition');
+    
+    // Clear any pending timeouts
+    if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+        typewriterTimeout = null;
+    }
+    
+    // Remove event listeners
+    removeEventListeners();
+    
+    // Dispose background
+    try {
+        disposeScene2Background();
+    } catch (error) {
+        console.warn('Error disposing background:', error);
+    }
+    
+    // Step 3: Create love scene container (off-screen to the right)
+    loveSceneContainer = document.createElement('div');
+    Object.assign(loveSceneContainer.style, createLoveSceneStyles());
+    
+    // Create love text element
+    loveTextElement = document.createElement('div');
+    Object.assign(loveTextElement.style, createLoveTextStyles());
+    
+    // Assemble love scene
+    loveSceneContainer.appendChild(loveTextElement);
+    document.body.appendChild(loveSceneContainer);
+    
+    // Step 4: Slide in from right over 1s
+    // Force a reflow to ensure the off-screen position is applied
+    loveSceneContainer.offsetHeight;
+    
+    // Start slide-in animation
+    loveSceneContainer.style.transform = 'translateX(0)';
+    
+    // Wait for slide-in to complete
+    await new Promise(resolve => {
+        setTimeout(resolve, 1000);
+    });
+    
+    // Step 5: Start typewriter effect for "I love you"
+    console.log('Starting love text typewriter effect');
+    await typeLoveText('I love you');
+    
+    console.log('Love scene transition completed');
+}
+
 // Handle input to advance to next block
 async function handleAdvanceInput() {
-    if (!isWaitingForInput || isTyping || !isInitialized) return;
+    if (!isWaitingForInput || isTyping || !isInitialized || isTransitioning) return;
     
     hideHint();
+    
+    // Check if we're at the last text block
+    if (currentBlockIndex === textBlocks.length - 1) {
+        // Transition to love scene instead of advancing
+        await transitionToLoveScene();
+        return;
+    }
     
     // Move to next block
     currentBlockIndex++;
     
     if (currentBlockIndex >= textBlocks.length) {
-        // All blocks completed
+        // All blocks completed (this shouldn't happen now due to above check)
         console.log('All text blocks completed');
         return;
     }
@@ -472,6 +643,7 @@ export async function initScene2(containerElement) {
     
     // Initialize state
     currentBlockIndex = 0;
+    isTransitioning = false;
     isInitialized = true;
     
     // Start with first text block
@@ -528,6 +700,11 @@ export function disposeScene2() {
         styleElement.remove();
     }
     
+    // Clean up love scene if it exists
+    if (loveSceneContainer && loveSceneContainer.parentNode) {
+        loveSceneContainer.parentNode.removeChild(loveSceneContainer);
+    }
+    
     // Remove container if auto-created
     if (container && container.id === 'scene2-container' && container.parentNode) {
         container.parentNode.removeChild(container);
@@ -545,9 +722,12 @@ export function disposeScene2() {
     glassPanel = null;
     textContainer = null;
     hintElement = null;
+    loveSceneContainer = null;
+    loveTextElement = null;
     currentBlockIndex = 0;
     isTyping = false;
     isWaitingForInput = false;
+    isTransitioning = false;
     isInitialized = false;
     
     console.log('Scene 2 disposed successfully');
