@@ -341,17 +341,35 @@ async function typeMessage(messageData) {
     
     element.textContent = '';
     
-    // Type each character
+    // Add cyber pulse animation to non-title messages
+    if (!messageData.isTitle) {
+        element.style.animation = 'cyberPulse 2s ease-in-out infinite';
+    }
+    
+    // Type each character with elite hacker-style timing
     for (let i = 0; i < text.length; i++) {
         element.textContent = text.substring(0, i + 1);
         
-        // Random delay between characters for realistic typing
-        const delay = 30 + Math.random() * 50;
+        // More dramatic delays for royal effect
+        let delay = 40;
+        
+        // Slower for title
+        if (messageData.isTitle) {
+            delay = 80 + Math.random() * 40;
+        } else {
+            delay = 25 + Math.random() * 35;
+        }
+        
         await new Promise(resolve => setTimeout(resolve, delay));
         
-        // Pause longer after punctuation
-        if ('.!?'.includes(text[i])) {
-            await new Promise(resolve => setTimeout(resolve, 200));
+        // Longer pause after periods and special characters for dramatic effect
+        if ('.>:'.includes(text[i])) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        // Extra pause after ">>INITIATING" style prompts
+        if (text[i] === '.' && text.includes('>>')) {
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
 }
