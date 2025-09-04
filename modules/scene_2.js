@@ -454,9 +454,22 @@ export async function initScene2(containerElement) {
     if (isInitialized) {
         disposeScene2();
     }
-    
+
+    // If no container provided, create one
+    if (!containerElement) {
+        containerElement = document.createElement('div');
+        containerElement.id = 'scene2-container';
+        Object.assign(containerElement.style, {
+            position: 'fixed',
+            inset: '0',
+            zIndex: '0',
+            overflow: 'hidden'
+        });
+        document.body.appendChild(containerElement);
+    }
+
     container = containerElement;
-    
+
     // Initialize background
     initScene2Background(container);
     
