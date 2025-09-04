@@ -176,7 +176,7 @@ function addAnimationStyles() {
     style.id = 'scene2-glass-styles';
     style.textContent = `
         @keyframes pulseHint {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
+            0%, 100% { opacity: 0.3; transform: scale(1); }
             50% { opacity: 1; transform: scale(1.05); }
         }
         
