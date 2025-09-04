@@ -7,6 +7,7 @@ import { showPanel } from '/birthday-site/modules/panel.js';
 let cameraTransitionActive = false;
 let cameraTransitionStart = 0;
 let cameraTransitionDuration = 2000; // ms
+let canvasFadeDuration = 1500; // 1.5s fade
 let cameraStartZ = 0;
 let cameraTargetZ = -150; // how far forward camera moves
 
@@ -64,7 +65,35 @@ function initAudioContext() {
         audioContext.resume();
     }
 }
+function fadeOutRendererAndDispose() {
+  const canvas = renderer.domElement;
+  // ensure canvas has style so we can fade
+  canvas.style.transition = `opacity ${canvasFadeDuration}ms ease`;
+  canvas.style.opacity = '0';
 
+  // Also optionally tint to black: create overlay to hide visual pop.
+
+  // After fade completes:
+  setTimeout(() => {
+    // Stop the animation loop before disposing
+    if (animationId) cancelAnimationFrame(animationId);
+
+    // Dispose starfield (free geometries)
+    if (starfield && starfield.dispose) starfield.dispose();
+
+    // Dispose renderer
+    try {
+      renderer.forceContextLoss();
+      renderer.domElement.parentNode && renderer.domElement.parentNode.removeChild(renderer.domElement);
+      renderer.dispose();
+    } catch (e) {
+      console.warn('Renderer disposal error', e);
+    }
+
+    // Now initialize scene 2 UI
+    initScene2();
+  }, canvasFadeDuration);
+}
 /**
  * Start the warp acceleration sound effect
  */
@@ -197,7 +226,7 @@ function animate(time) {
             cameraTransitionActive = false;
             stopWarpSound(); // Stop sound when warp completes
             console.log("Camera warp complete!");
-            // Here we can trigger Scene 2
+            fadeOutRendererAndDispose();
         }
     }
     
