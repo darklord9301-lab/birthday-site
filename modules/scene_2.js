@@ -264,8 +264,8 @@ async function typeBlock(text) {
         
         textContainer.textContent = text.substring(0, i);
         
-        // Dramatic typing speed (80-100ms per character)
-        const delay = 80 + Math.random() * 20;
+        // Dramatic typing speed (120-140ms per character)
+        const delay = 120 + Math.random() * 20;
         await new Promise(resolve => {
             typewriterTimeout = setTimeout(resolve, delay);
         });
