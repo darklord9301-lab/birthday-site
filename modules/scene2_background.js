@@ -19,7 +19,7 @@ export function initScene2Background() {
     videoElement.loop = true;
     videoElement.playsInline = true;
     videoElement.preload = "auto";
-    videoElement.playbackRate = 0.2;
+    videoElement.playbackRate = 0.002;
 
     // Style it to cover entire screen
     Object.assign(videoElement.style, {
