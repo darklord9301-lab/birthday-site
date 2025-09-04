@@ -579,3 +579,21 @@ export function setMusicVolume(volume) {
         backgroundMusic.volume = Math.max(0, Math.min(1, volume));
     }
 }
+
+// Debug function to test music manually
+export function testMusic() {
+    console.log('=== MUSIC DEBUG INFO ===');
+    console.log('Background music object:', backgroundMusic);
+    console.log('Audio context:', audioContext);
+    console.log('Current src:', backgroundMusic?.src);
+    console.log('Ready state:', backgroundMusic?.readyState);
+    console.log('Paused:', backgroundMusic?.paused);
+    console.log('Volume:', backgroundMusic?.volume);
+    console.log('Duration:', backgroundMusic?.duration);
+    
+    if (backgroundMusic) {
+        backgroundMusic.play()
+            .then(() => console.log('✅ Manual play successful'))
+            .catch(err => console.error('❌ Manual play failed:', err));
+    }
+}
