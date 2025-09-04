@@ -44,7 +44,7 @@ const textBlocks = [
     "Today my precious Urmi turns 20... 🎉🎂💖",
     "The thought of your smile 😄💛 lights up my every morning, brighter than the sun ☀️🌼!!",
     "Your laughter is my favourite melody 🎶💓 and your eyes hold my whole universe 🌌💙",
-    "You’re my sunshine ☀️, my rainbow 🌈, and my little piece of forever 💫💞",
+    "You’re my sunshine ☀️, my rainbow 🌈, and my home forever 💫💞",
     "With you, every second feels like a fairytale 🏰👑💖",
     "If I could, I’d gift you the stars 🌟🌙 because you deserve the whole sky 💌",
     "Ami shob somoy tor shathei thakbo... 🤝💓 forever & always 💌",
