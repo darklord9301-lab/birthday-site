@@ -1,198 +1,90 @@
 // /modules/scene_2.js
-// Birthday Scene with typewriter effects, synthetic music, and space background
+// Glass Panel Birthday Scene with typewriter effects, gesture controls, and background music
 
 import { initScene2Background, disposeScene2Background } from './scene2_background.js';
 
 // Module scope variables
 let isInitialized = false;
 let container = null;
-let scrollContainer = null;
-let overlayElement = null;
-let contentContainer = null;
+let glassPanel = null;
+let textContainer = null;
+let hintElement = null;
+let currentBlockIndex = 0;
+let isTyping = false;
+let isWaitingForInput = false;
+let typewriterTimeout = null;
 
 // Audio system
+let backgroundMusic = null;
 let audioContext = null;
-let isAudioLoaded = false;
-let currentAudioSource = null;
-let gainNode = null;
-let happyBirthdayNotes = null;
-let noteDuration = 0.5; // seconds per note
-let totalMusicDuration = 0;
 
-// Animation state
-let animationId = null;
-let scrollProgress = 0;
-let targetScrollProgress = 0;
-let lastScrollTime = 0;
-
-// Typewriter state
-const messageElements = [];
-const messages = [
-    { text: "Happy Birthday Urmi!", isTitle: true, typed: false, element: null },
-    { text: "Wishing you joy and happiness 🎉", isTitle: false, typed: false, element: null },
-    { text: "May your year be filled with love 💖", isTitle: false, typed: false, element: null },
-    { text: "You are amazing and wonderful 🌟", isTitle: false, typed: false, element: null },
-    { text: "Hope your special day is magical ✨", isTitle: false, typed: false, element: null },
-    { text: "Another year of awesome adventures 🚀", isTitle: false, typed: false, element: null },
-    { text: "You bring light to everyone around you 🌞", isTitle: false, typed: false, element: null },
-    { text: "Here's to your brightest year yet! 🎊", isTitle: false, typed: false, element: null },
-    { text: "Celebrating you today and always 🎂", isTitle: false, typed: false, element: null }
-];
-
-// Happy Birthday melody (simplified version)
-// Notes: C C D C F E, C C D C G F, C C C A F E D, Bb Bb A F G F
-const happyBirthdayMelody = [
-    // "Happy Birthday to you"
-    { note: 'C4', duration: 0.75 },
-    { note: 'C4', duration: 0.25 },
-    { note: 'D4', duration: 1.0 },
-    { note: 'C4', duration: 1.0 },
-    { note: 'F4', duration: 1.0 },
-    { note: 'E4', duration: 2.0 },
-    
-    // "Happy Birthday to you"
-    { note: 'C4', duration: 0.75 },
-    { note: 'C4', duration: 0.25 },
-    { note: 'D4', duration: 1.0 },
-    { note: 'C4', duration: 1.0 },
-    { note: 'G4', duration: 1.0 },
-    { note: 'F4', duration: 2.0 },
-    
-    // "Happy Birthday dear [name]"
-    { note: 'C4', duration: 0.75 },
-    { note: 'C4', duration: 0.25 },
-    { note: 'C5', duration: 1.0 },
-    { note: 'A4', duration: 1.0 },
-    { note: 'F4', duration: 1.0 },
-    { note: 'E4', duration: 1.0 },
-    { note: 'D4', duration: 2.0 },
-    
-    // "Happy Birthday to you"
-    { note: 'Bb4', duration: 0.75 },
-    { note: 'Bb4', duration: 0.25 },
-    { note: 'A4', duration: 1.0 },
-    { note: 'F4', duration: 1.0 },
-    { note: 'G4', duration: 1.0 },
-    { note: 'F4', duration: 2.0 }
-];
-
-// Note frequencies (in Hz)
-const noteFrequencies = {
-    'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23,
-    'G4': 392.00, 'A4': 440.00, 'Bb4': 466.16, 'C5': 523.25
+// Event handlers for cleanup
+let eventHandlers = {
+    keydown: null,
+    click: null,
+    touchstart: null,
+    touchend: null
 };
 
-// Initialize Web Audio API and create synthetic Happy Birthday tune
-async function initAudio() {
+// Touch gesture detection
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+const SWIPE_THRESHOLD = 50;
+const SWIPE_TIME_THRESHOLD = 300;
+
+// Text blocks for easy editing
+const textBlocks = [
+    "Happy Birthday Urmi! 🎉",
+    "Today marks another beautiful year of your incredible journey through life.",
+    "Your smile lights up every room you enter, bringing joy to everyone around you.",
+    "May this new year bring you countless adventures, wonderful surprises, and dreams come true.",
+    "You have a heart of gold and a spirit that inspires others to be their best selves.",
+    "Here's to celebrating you today and all the amazing things you'll accomplish this year.",
+    "Wishing you laughter that echoes, love that surrounds you, and happiness that never fades.",
+    "May every moment of your special day be filled with the magic you bring to our lives.",
+    "Happy Birthday, Urmi! You are truly one of a kind! ✨🎂"
+];
+
+// Initialize background music
+async function initBackgroundMusic() {
     try {
+        // Create audio context for better control
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
-        // Create gain node for volume control
-        gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.connect(audioContext.destination);
+        // Create audio element
+        backgroundMusic = new Audio('assets/sounds/background.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.6;
         
-        // Generate the Happy Birthday melody
-        await generateHappyBirthdayAudio();
+        // Handle autoplay restrictions
+        const playPromise = backgroundMusic.play();
         
-        isAudioLoaded = true;
-        console.log('Synthetic Happy Birthday audio initialized');
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('Background music started successfully');
+            }).catch(error => {
+                console.warn('Autoplay prevented, music will start on user interaction:', error);
+                
+                // Add one-time click listener to start music
+                const startMusicOnInteraction = () => {
+                    backgroundMusic.play().then(() => {
+                        console.log('Background music started after user interaction');
+                    }).catch(err => console.warn('Failed to start music:', err));
+                    
+                    document.removeEventListener('click', startMusicOnInteraction);
+                    document.removeEventListener('touchstart', startMusicOnInteraction);
+                };
+                
+                document.addEventListener('click', startMusicOnInteraction, { once: true });
+                document.addEventListener('touchstart', startMusicOnInteraction, { once: true });
+            });
+        }
+        
+        return true;
     } catch (error) {
-        console.warn('Audio initialization failed:', error);
-        isAudioLoaded = false;
-    }
-}
-
-// Generate synthetic Happy Birthday audio buffer
-async function generateHappyBirthdayAudio() {
-    // Calculate total duration
-    totalMusicDuration = happyBirthdayMelody.reduce((sum, note) => sum + note.duration, 0);
-    
-    const sampleRate = audioContext.sampleRate;
-    const totalFrames = Math.floor(totalMusicDuration * sampleRate);
-    
-    // Create audio buffer
-    happyBirthdayNotes = audioContext.createBuffer(1, totalFrames, sampleRate);
-    const channelData = happyBirthdayNotes.getChannelData(0);
-    
-    let currentTime = 0;
-    
-    // Generate each note
-    happyBirthdayMelody.forEach(noteInfo => {
-        const frequency = noteFrequencies[noteInfo.note];
-        const noteDurationSamples = Math.floor(noteInfo.duration * sampleRate);
-        const startSample = Math.floor(currentTime * sampleRate);
-        
-        // Generate sine wave with envelope
-        for (let i = 0; i < noteDurationSamples && startSample + i < totalFrames; i++) {
-            const t = i / sampleRate;
-            const phase = 2 * Math.PI * frequency * t;
-            
-            // Create envelope (attack, sustain, release)
-            let envelope = 1.0;
-            const attackTime = 0.05;
-            const releaseTime = 0.1;
-            
-            if (t < attackTime) {
-                envelope = t / attackTime;
-            } else if (t > noteInfo.duration - releaseTime) {
-                envelope = (noteInfo.duration - t) / releaseTime;
-            }
-            
-            // Add harmonics for richer sound
-            const fundamental = Math.sin(phase);
-            const harmonic2 = 0.3 * Math.sin(phase * 2);
-            const harmonic3 = 0.1 * Math.sin(phase * 3);
-            
-            const sample = (fundamental + harmonic2 + harmonic3) * envelope * 0.2;
-            
-            channelData[startSample + i] += sample;
-        }
-        
-        currentTime += noteInfo.duration;
-    });
-}
-
-// Play audio at specific position based on scroll
-function updateAudioPlayback(progress) {
-    if (!isAudioLoaded || !happyBirthdayNotes || !audioContext) return;
-    
-    // Stop current source if playing
-    if (currentAudioSource) {
-        try {
-            currentAudioSource.stop();
-        } catch (e) {
-            // Source might already be stopped
-        }
-        currentAudioSource = null;
-    }
-    
-    // Calculate playback position
-    const playbackPosition = Math.min(progress * totalMusicDuration, totalMusicDuration - 0.1);
-    const remainingDuration = totalMusicDuration - playbackPosition;
-    
-    if (remainingDuration > 0.05) {
-        currentAudioSource = audioContext.createBufferSource();
-        currentAudioSource.buffer = happyBirthdayNotes;
-        currentAudioSource.connect(gainNode);
-        
-        try {
-            currentAudioSource.start(0, playbackPosition);
-            
-            // Stop after short duration for smooth scrolling effect
-            setTimeout(() => {
-                if (currentAudioSource) {
-                    try {
-                        currentAudioSource.stop();
-                    } catch (e) {
-                        // Source might already be stopped
-                    }
-                    currentAudioSource = null;
-                }
-            }, 150); // Play 150ms chunks
-        } catch (error) {
-            console.warn('Audio playback error:', error);
-        }
+        console.warn('Failed to initialize background music:', error);
+        return false;
     }
 }
 
@@ -204,257 +96,334 @@ function createContainerStyles() {
         left: '0',
         width: '100%',
         height: '100%',
-        overflow: 'hidden',
-        zIndex: '1',
-        fontFamily: '"Segoe UI", "Helvetica Neue", Arial, sans-serif'
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: '10',
+        fontFamily: '"Segoe UI", "Helvetica Neue", Arial, sans-serif',
+        pointerEvents: 'auto'
     };
 }
 
-// Create dark gradient overlay for text readability
-function createOverlayStyles() {
-    return {
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        width: '100%',
-        height: '100%',
-        background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.4) 100%)',
-        pointerEvents: 'none',
-        zIndex: '1'
-    };
-}
-
-// Create scroll container styles
-function createScrollContainerStyles() {
+// Create glass panel styles
+function createGlassPanelStyles() {
     return {
         position: 'relative',
-        width: '100%',
-        height: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        zIndex: '2',
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent',
-        WebkitOverflowScrolling: 'touch'
-    };
-}
-
-// Create content container styles
-function createContentContainerStyles() {
-    return {
-        minHeight: '300vh', // Ensure enough scroll content
-        padding: '80px 20px',
+        width: 'min(90vw, 600px)',
+        minHeight: '300px',
+        maxHeight: '70vh',
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '20px',
+        padding: '40px',
+        boxShadow: `
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+            0 0 40px rgba(102, 217, 245, 0.3),
+            0 0 80px rgba(255, 107, 157, 0.2)
+        `,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '120px'
-    };
-}
-
-// Create message element
-function createMessageElement(messageData, index) {
-    const element = document.createElement('div');
-    
-    const baseStyles = {
+        justifyContent: 'center',
         textAlign: 'center',
-        color: 'rgba(255, 255, 255, 0.9)',
-        textShadow: '0 2px 4px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.3)',
-        opacity: '0',
-        transform: 'translateY(30px)',
-        transition: 'opacity 0.8s ease-out, transform 0.8s ease-out',
-        maxWidth: '90%',
-        margin: '0 auto'
+        overflow: 'hidden'
     };
-    
-    if (messageData.isTitle) {
-        Object.assign(baseStyles, {
-            fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
-            fontWeight: '700',
-            background: 'linear-gradient(135deg, #ff6b9d, #ffc93c, #06ffa5, #66d9f5)',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundSize: '300% 300%',
-            animation: 'gradientShift 3s ease-in-out infinite',
-            marginBottom: '40px',
-            letterSpacing: '0.05em'
-        });
-    } else {
-        Object.assign(baseStyles, {
-            fontSize: 'clamp(1.2rem, 4vw, 1.8rem)',
-            fontWeight: '400',
-            lineHeight: '1.4',
-            letterSpacing: '0.02em'
-        });
-    }
-    
-    Object.assign(element.style, baseStyles);
-    
-    messageData.element = element;
-    contentContainer.appendChild(element);
-    
-    return element;
 }
 
-// Add gradient animation styles
+// Create text container styles
+function createTextContainerStyles() {
+    return {
+        width: '100%',
+        minHeight: '150px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 'clamp(1.2rem, 4vw, 1.8rem)',
+        lineHeight: '1.6',
+        color: 'rgba(255, 255, 255, 0.95)',
+        textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+        letterSpacing: '0.02em',
+        wordWrap: 'break-word',
+        hyphens: 'auto'
+    };
+}
+
+// Create hint element styles
+function createHintStyles() {
+    return {
+        position: 'absolute',
+        bottom: '20px',
+        right: '30px',
+        fontSize: '0.9rem',
+        color: 'rgba(255, 255, 255, 0.7)',
+        opacity: '0',
+        transition: 'opacity 0.3s ease-in-out',
+        animation: 'pulseHint 2s ease-in-out infinite',
+        textShadow: '0 1px 4px rgba(0, 0, 0, 0.5)',
+        pointerEvents: 'none',
+        userSelect: 'none'
+    };
+}
+
+// Add CSS animations
 function addAnimationStyles() {
-    if (document.getElementById('scene2-styles')) return;
+    if (document.getElementById('scene2-glass-styles')) return;
     
     const style = document.createElement('style');
-    style.id = 'scene2-styles';
+    style.id = 'scene2-glass-styles';
     style.textContent = `
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        @keyframes pulseHint {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
         }
         
-        .scene2-scroll::-webkit-scrollbar {
-            width: 8px;
+        @keyframes wipeOut {
+            0% { 
+                opacity: 1; 
+                transform: translateX(0) scale(1); 
+                filter: blur(0px);
+            }
+            50% { 
+                opacity: 0.5; 
+                transform: translateX(20px) scale(0.95); 
+                filter: blur(2px);
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateX(100px) scale(0.8); 
+                filter: blur(5px);
+            }
         }
-        .scene2-scroll::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-        .scene2-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-        }
-        .scene2-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
+        
+        @keyframes wipeIn {
+            0% { 
+                opacity: 0; 
+                transform: translateX(-100px) scale(0.8); 
+                filter: blur(5px);
+            }
+            50% { 
+                opacity: 0.5; 
+                transform: translateX(-20px) scale(0.95); 
+                filter: blur(2px);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateX(0) scale(1); 
+                filter: blur(0px);
+            }
         }
     `;
     document.head.appendChild(style);
 }
 
-// Typewriter effect
-async function typeMessage(messageData) {
-    if (messageData.typed || !messageData.element) return;
-    
-    messageData.typed = true;
-    const text = messageData.text;
-    const element = messageData.element;
-    
-    // Show element
-    element.style.opacity = '1';
-    element.style.transform = 'translateY(0)';
-    
-    element.textContent = '';
-    
-    // Add cyber pulse animation to non-title messages
-    if (!messageData.isTitle) {
-        element.style.animation = 'cyberPulse 2s ease-in-out infinite';
-    }
-    
-    // Type each character with elite hacker-style timing
-    for (let i = 0; i < text.length; i++) {
-        element.textContent = text.substring(0, i + 1);
-        
-        // More dramatic delays for royal effect
-        let delay = 40;
-        
-        // Slower for title
-        if (messageData.isTitle) {
-            delay = 80 + Math.random() * 40;
-        } else {
-            delay = 25 + Math.random() * 35;
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
-        // Longer pause after periods and special characters for dramatic effect
-        if ('.>:'.includes(text[i])) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-        }
-        
-        // Extra pause after ">>INITIATING" style prompts
-        if (text[i] === '.' && text.includes('>>')) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-    }
+// Detect device type
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
 }
 
-// Check which messages should be typed based on viewport
-function updateTypewriterEffects() {
-    if (!scrollContainer) return;
+// Update hint text based on device
+function updateHintText() {
+    if (!hintElement) return;
     
-    const containerRect = scrollContainer.getBoundingClientRect();
-    const containerHeight = containerRect.height;
-    const triggerPoint = containerHeight * 0.7; // Start typing when 70% visible
+    const isMobile = isMobileDevice();
+    hintElement.textContent = isMobile ? 'Swipe →' : 'Press → or Click';
+}
+
+// Show hint with fade in
+function showHint() {
+    if (!hintElement || isTyping) return;
     
-    messages.forEach((messageData, index) => {
-        if (messageData.typed || !messageData.element) return;
+    updateHintText();
+    hintElement.style.opacity = '0.7';
+    isWaitingForInput = true;
+}
+
+// Hide hint with fade out
+function hideHint() {
+    if (!hintElement) return;
+    
+    hintElement.style.opacity = '0';
+    isWaitingForInput = false;
+}
+
+// Typewriter effect for a single block
+async function typeBlock(text) {
+    if (!textContainer) return;
+    
+    isTyping = true;
+    textContainer.textContent = '';
+    textContainer.style.animation = 'wipeIn 0.5s ease-out';
+    
+    // Type each character
+    for (let i = 0; i <= text.length; i++) {
+        if (!isInitialized) return; // Exit if scene was disposed
         
-        const elementRect = messageData.element.getBoundingClientRect();
-        const elementTop = elementRect.top - containerRect.top;
+        textContainer.textContent = text.substring(0, i);
         
-        // Check if element has entered the viewport trigger zone
-        if (elementTop < triggerPoint) {
-            typeMessage(messageData);
+        // Dramatic typing speed (80-100ms per character)
+        const delay = 80 + Math.random() * 20;
+        await new Promise(resolve => {
+            typewriterTimeout = setTimeout(resolve, delay);
+        });
+        
+        // Extra pause after punctuation for drama
+        if (i < text.length && '.!?'.includes(text[i])) {
+            await new Promise(resolve => {
+                typewriterTimeout = setTimeout(resolve, 300);
+            });
         }
+    }
+    
+    isTyping = false;
+    
+    // Show hint after typing completes
+    setTimeout(() => {
+        if (!isTyping && isInitialized) {
+            showHint();
+        }
+    }, 500);
+}
+
+// Wipe animation before next block
+async function wipeCurrentText() {
+    if (!textContainer) return;
+    
+    textContainer.style.animation = 'wipeOut 0.8s ease-in';
+    
+    return new Promise(resolve => {
+        setTimeout(() => {
+            if (textContainer) {
+                textContainer.textContent = '';
+            }
+            resolve();
+        }, 800);
     });
 }
 
-// Handle scroll events
-function handleScroll() {
-    if (!scrollContainer) return;
+// Handle input to advance to next block
+async function handleAdvanceInput() {
+    if (!isWaitingForInput || isTyping || !isInitialized) return;
     
-    const scrollTop = scrollContainer.scrollTop;
-    const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
-    targetScrollProgress = Math.min(scrollTop / Math.max(scrollHeight, 1), 1);
+    hideHint();
     
-    // Update typewriter effects
-    updateTypewriterEffects();
+    // Move to next block
+    currentBlockIndex++;
     
-    lastScrollTime = Date.now();
-}
-
-// Animation loop
-function animate() {
-    if (!isInitialized) return;
-    
-    // Smooth scroll progress interpolation
-    const scrollLerpFactor = 0.1;
-    const prevProgress = scrollProgress;
-    scrollProgress += (targetScrollProgress - scrollProgress) * scrollLerpFactor;
-    
-    // Update audio if scroll changed significantly
-    if (Math.abs(scrollProgress - prevProgress) > 0.01) {
-        updateAudioPlayback(scrollProgress);
+    if (currentBlockIndex >= textBlocks.length) {
+        // All blocks completed
+        console.log('All text blocks completed');
+        return;
     }
     
-    // Update message fade based on scroll position
-    messages.forEach((messageData, index) => {
-        if (!messageData.element) return;
-        
-        const messageRect = messageData.element.getBoundingClientRect();
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const messageCenter = messageRect.top + messageRect.height / 2;
-        const containerCenter = containerRect.top + containerRect.height / 2;
-        
-        // Calculate distance from center
-        const distance = Math.abs(messageCenter - containerCenter);
-        const maxDistance = containerRect.height * 0.7;
-        
-        // Fade out messages that are far from center
-        let opacity = 1;
-        if (distance > maxDistance) {
-            opacity = Math.max(0.3, 1 - (distance - maxDistance) / (containerRect.height * 0.3));
-        }
-        
-        if (messageData.typed) {
-            messageData.element.style.opacity = opacity.toString();
-        }
-    });
+    // Wipe current text and show next block
+    await wipeCurrentText();
     
-    animationId = requestAnimationFrame(animate);
+    if (isInitialized) {
+        await typeBlock(textBlocks[currentBlockIndex]);
+    }
 }
 
-// Initialize the birthday scene
+// Keyboard event handler
+function handleKeyDown(event) {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === ' ') {
+        event.preventDefault();
+        handleAdvanceInput();
+    }
+}
+
+// Click event handler
+function handleClick(event) {
+    // Only handle clicks on the glass panel area
+    if (glassPanel && (glassPanel.contains(event.target) || event.target === glassPanel)) {
+        handleAdvanceInput();
+    }
+}
+
+// Touch event handlers for swipe detection
+function handleTouchStart(event) {
+    if (!glassPanel || !glassPanel.contains(event.target)) return;
+    
+    const touch = event.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+}
+
+function handleTouchEnd(event) {
+    if (!glassPanel || event.changedTouches.length === 0) return;
+    
+    const touch = event.changedTouches[0];
+    const touchEndX = touch.clientX;
+    const touchEndY = touch.clientY;
+    const touchEndTime = Date.now();
+    
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    const deltaTime = touchEndTime - touchStartTime;
+    
+    // Check if it's a valid swipe (right or down)
+    if (deltaTime < SWIPE_TIME_THRESHOLD) {
+        const isRightSwipe = deltaX > SWIPE_THRESHOLD && Math.abs(deltaY) < SWIPE_THRESHOLD;
+        const isDownSwipe = deltaY > SWIPE_THRESHOLD && Math.abs(deltaX) < SWIPE_THRESHOLD;
+        
+        if (isRightSwipe || isDownSwipe) {
+            event.preventDefault();
+            handleAdvanceInput();
+        }
+    }
+}
+
+// Add event listeners
+function addEventListeners() {
+    // Keyboard events
+    eventHandlers.keydown = handleKeyDown;
+    document.addEventListener('keydown', eventHandlers.keydown);
+    
+    // Click events
+    eventHandlers.click = handleClick;
+    document.addEventListener('click', eventHandlers.click);
+    
+    // Touch events for mobile
+    eventHandlers.touchstart = handleTouchStart;
+    eventHandlers.touchend = handleTouchEnd;
+    document.addEventListener('touchstart', eventHandlers.touchstart, { passive: false });
+    document.addEventListener('touchend', eventHandlers.touchend, { passive: false });
+}
+
+// Remove event listeners
+function removeEventListeners() {
+    if (eventHandlers.keydown) {
+        document.removeEventListener('keydown', eventHandlers.keydown);
+        eventHandlers.keydown = null;
+    }
+    
+    if (eventHandlers.click) {
+        document.removeEventListener('click', eventHandlers.click);
+        eventHandlers.click = null;
+    }
+    
+    if (eventHandlers.touchstart) {
+        document.removeEventListener('touchstart', eventHandlers.touchstart);
+        eventHandlers.touchstart = null;
+    }
+    
+    if (eventHandlers.touchend) {
+        document.removeEventListener('touchend', eventHandlers.touchend);
+        eventHandlers.touchend = null;
+    }
+}
+
+// Initialize Scene 2
 export async function initScene2(containerElement) {
     if (isInitialized) {
         disposeScene2();
     }
+    
+    console.log('Initializing Scene 2 - Glass Panel UI');
     
     // Create or use provided container
     if (!containerElement) {
@@ -468,95 +437,93 @@ export async function initScene2(containerElement) {
     
     container = containerElement;
     
-    // Initialize background
-    initScene2Background(container);
+    // Initialize background video
+    try {
+        await initScene2Background(container);
+    } catch (error) {
+        console.warn('Failed to initialize background:', error);
+    }
     
-    // Initialize audio
-    await initAudio();
-    
-    // Create overlay for text readability
-    overlayElement = document.createElement('div');
-    Object.assign(overlayElement.style, createOverlayStyles());
-    container.appendChild(overlayElement);
-    
-    // Create scroll container
-    scrollContainer = document.createElement('div');
-    Object.assign(scrollContainer.style, createScrollContainerStyles());
-    scrollContainer.classList.add('scene2-scroll');
-    
-    // Create content container
-    contentContainer = document.createElement('div');
-    Object.assign(contentContainer.style, createContentContainerStyles());
+    // Initialize background music
+    await initBackgroundMusic();
     
     // Add animation styles
     addAnimationStyles();
     
-    // Create message elements
-    messages.forEach((messageData, index) => {
-        createMessageElement(messageData, index);
-    });
+    // Create glass panel
+    glassPanel = document.createElement('div');
+    Object.assign(glassPanel.style, createGlassPanelStyles());
+    
+    // Create text container
+    textContainer = document.createElement('div');
+    Object.assign(textContainer.style, createTextContainerStyles());
+    
+    // Create hint element
+    hintElement = document.createElement('div');
+    Object.assign(hintElement.style, createHintStyles());
     
     // Assemble UI
-    scrollContainer.appendChild(contentContainer);
-    container.appendChild(scrollContainer);
+    glassPanel.appendChild(textContainer);
+    glassPanel.appendChild(hintElement);
+    container.appendChild(glassPanel);
     
     // Add event listeners
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    addEventListeners();
     
-    // Start animation loop
+    // Initialize state
+    currentBlockIndex = 0;
     isInitialized = true;
-    animate();
     
-    // Trigger initial typewriter check after a brief delay
-    setTimeout(() => {
-        updateTypewriterEffects();
-    }, 500);
+    // Start with first text block
+    setTimeout(async () => {
+        if (isInitialized && textBlocks.length > 0) {
+            await typeBlock(textBlocks[currentBlockIndex]);
+        }
+    }, 1000);
     
-    console.log('Birthday Scene 2 initialized with typewriter effects and synthetic music');
+    console.log('Scene 2 initialized successfully');
     
     return {
         container,
-        scrollContainer,
-        contentContainer
+        glassPanel,
+        textContainer,
+        hintElement
     };
 }
 
-// Dispose the scene
+// Dispose Scene 2
 export function disposeScene2() {
     if (!isInitialized) return;
     
-    // Stop animation
-    if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
+    console.log('Disposing Scene 2');
+    
+    // Clear any pending timeouts
+    if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+        typewriterTimeout = null;
     }
     
     // Stop and cleanup audio
-    if (currentAudioSource) {
-        try {
-            currentAudioSource.stop();
-        } catch (e) {
-            // Source might already be stopped
-        }
-        currentAudioSource = null;
+    if (backgroundMusic) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+        backgroundMusic = null;
     }
     
     if (audioContext && audioContext.state !== 'closed') {
         try {
             audioContext.close();
-        } catch (e) {
-            // AudioContext might already be closed
+        } catch (error) {
+            console.warn('Error closing audio context:', error);
         }
         audioContext = null;
     }
     
     // Remove event listeners
-    if (scrollContainer) {
-        scrollContainer.removeEventListener('scroll', handleScroll);
-    }
+    removeEventListeners();
     
     // Remove style element
-    const styleElement = document.getElementById('scene2-styles');
+    const styleElement = document.getElementById('scene2-glass-styles');
     if (styleElement) {
         styleElement.remove();
     }
@@ -567,42 +534,48 @@ export function disposeScene2() {
     }
     
     // Dispose background
-    disposeScene2Background();
+    try {
+        disposeScene2Background();
+    } catch (error) {
+        console.warn('Error disposing background:', error);
+    }
     
     // Reset state
     container = null;
-    scrollContainer = null;
-    overlayElement = null;
-    contentContainer = null;
-    happyBirthdayNotes = null;
-    gainNode = null;
-    isAudioLoaded = false;
+    glassPanel = null;
+    textContainer = null;
+    hintElement = null;
+    currentBlockIndex = 0;
+    isTyping = false;
+    isWaitingForInput = false;
     isInitialized = false;
-    scrollProgress = 0;
-    targetScrollProgress = 0;
-    lastScrollTime = 0;
     
-    // Reset message states
-    messages.forEach(messageData => {
-        messageData.typed = false;
-        messageData.element = null;
-    });
-    messageElements.length = 0;
-    
-    console.log('Birthday Scene 2 disposed');
+    console.log('Scene 2 disposed successfully');
 }
 
 // Export utility functions
-export function getScrollProgress() {
-    return scrollProgress;
+export function getCurrentBlockIndex() {
+    return currentBlockIndex;
 }
 
 export function isScene2Initialized() {
     return isInitialized;
 }
 
-export function setAudioVolume(volume) {
-    if (gainNode) {
-        gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), audioContext.currentTime);
+export function isCurrentlyTyping() {
+    return isTyping;
+}
+
+export function isWaitingForUserInput() {
+    return isWaitingForInput;
+}
+
+export function getTextBlocks() {
+    return [...textBlocks]; // Return a copy
+}
+
+export function setMusicVolume(volume) {
+    if (backgroundMusic) {
+        backgroundMusic.volume = Math.max(0, Math.min(1, volume));
     }
 }
