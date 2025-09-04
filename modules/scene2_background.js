@@ -2,6 +2,8 @@
 // INSANE 4K SPIRAL GALAXY - MIND-BLOWING HEAVENLY MASTERPIECE
 
 import * as THREE from '../libs/three.module.js';
+// /modules/scene2_background.js
+// INSANE 4K SPIRAL GALAXY - MIND-BLOWING HEAVENLY MASTERPIECE
 
 // Scene components
 let scene = null;
@@ -65,9 +67,13 @@ const galaxyVertexShader = `
     
     // Dynamic rotation with slight wobble for realism
     float angle = time * rotationSpeed + sin(time * 0.0001) * 0.02;
-    mat2 rotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    float cosA = cos(angle);
+    float sinA = sin(angle);
     
-    vec2 rotatedUv = rotation * (uv - 0.5) + 0.5;
+    vec2 rotatedUv = vec2(
+      cosA * (uv.x - 0.5) - sinA * (uv.y - 0.5) + 0.5,
+      sinA * (uv.x - 0.5) + cosA * (uv.y - 0.5) + 0.5
+    );
     vUv = rotatedUv;
     
     // Subtle vertex displacement for depth
@@ -96,39 +102,32 @@ const galaxyFragmentShader = `
   
   varying vec2 vUv;
   varying vec3 vWorldPosition;
-  varying vec3 vNormal;
   
-  // ULTRA HIGH QUALITY NOISE - 12 OCTAVES
-  vec4 hash44(vec4 p4) {
-    p4 = fract(p4 * vec4(0.1031, 0.1030, 0.0973, 0.1099));
-    p4 += dot(p4, p4.wzxy + 33.33);
-    return fract((p4.xxyz + p4.yzzw) * p4.zywx);
+  // High quality noise function - simplified for compatibility
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
   }
   
-  float noise4D(vec4 p) {
-    vec4 i = floor(p);
-    vec4 f = fract(p);
-    vec4 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0); // Quintic interpolation
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
     
     return mix(
-      mix(
-        mix(hash44(i).x, hash44(i + vec4(1,0,0,0)).x, u.x),
-        mix(hash44(i + vec4(0,1,0,0)).x, hash44(i + vec4(1,1,0,0)).x, u.x), u.y),
-      mix(
-        mix(hash44(i + vec4(0,0,1,0)).x, hash44(i + vec4(1,0,1,0)).x, u.x),
-        mix(hash44(i + vec4(0,1,1,0)).x, hash44(i + vec4(1,1,1,0)).x, u.x), u.y), u.z);
+      mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
   }
   
-  float fbm4D(vec4 p) {
+  float fbm(vec2 p) {
     float value = 0.0;
     float amplitude = 0.5;
     float frequency = 1.0;
     
-    // 12 octaves for INSANE detail
-    for (int i = 0; i < 12; i++) {
-      value += amplitude * noise4D(p * frequency);
-      frequency *= 2.03;
-      amplitude *= 0.51;
+    // 8 octaves for great detail without performance issues
+    for (int i = 0; i < 8; i++) {
+      value += amplitude * noise(p * frequency);
+      frequency *= 2.02;
+      amplitude *= 0.52;
     }
     return value;
   }
@@ -163,13 +162,13 @@ const galaxyFragmentShader = `
     float dist = length(center);
     float angle = atan(center.y, center.x);
     
-    // 4D noise for incredible detail
-    vec4 noisePos = vec4(uv * 8.0, time * 0.00003, layer * 0.5);
-    float superNoise = fbm4D(noisePos);
+    // Multi-octave noise for incredible detail
+    vec2 noisePos = uv * 8.0 + vec2(time * 0.00003, layer * 0.5);
+    float superNoise = fbm(noisePos);
     
     // High-frequency stellar formation noise
-    vec4 stellarNoise = vec4(uv * 20.0, time * 0.00001, dist * 5.0);
-    float starFormation = fbm4D(stellarNoise) * 0.8;
+    vec2 stellarNoise = uv * 20.0 + vec2(time * 0.00001, dist * 5.0);
+    float starFormation = fbm(stellarNoise) * 0.8;
     
     // Spiral arm calculation
     float spiralIntensity = spiralDensity(center, time * rotationSpeed);
@@ -448,9 +447,15 @@ const cosmicDustFragmentShader = `
 
 // Create INSANE galaxy layers with multiple components
 function createInsaneGalaxyLayers() {
+  // Check if THREE is available
+  if (typeof THREE === 'undefined') {
+    console.error('THREE.js not loaded');
+    return;
+  }
+  
   // MAIN GALAXY LAYER - Ultra high resolution
   const mainScale = 60;
-  const mainGeometry = new THREE.PlaneGeometry(mainScale, mainScale, 512, 512);
+  const mainGeometry = new THREE.PlaneGeometry(mainScale, mainScale, 256, 256); // Reduced for compatibility
   
   const mainMaterial = new THREE.ShaderMaterial({
     uniforms: {
@@ -482,7 +487,7 @@ function createInsaneGalaxyLayers() {
   scene.add(mainGalaxy);
   
   // SECONDARY GALAXY LAYER - Different rotation speed
-  const secGeometry = new THREE.PlaneGeometry(mainScale * 0.8, mainScale * 0.8, 384, 384);
+  const secGeometry = new THREE.PlaneGeometry(mainScale * 0.8, mainScale * 0.8, 192, 192);
   const secMaterial = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
@@ -513,7 +518,7 @@ function createInsaneGalaxyLayers() {
   scene.add(secGalaxy);
   
   // BACKGROUND DEEP FIELD
-  const bgGeometry = new THREE.PlaneGeometry(mainScale * 1.5, mainScale * 1.5, 256, 256);
+  const bgGeometry = new THREE.PlaneGeometry(mainScale * 1.5, mainScale * 1.5, 128, 128);
   const bgMaterial = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
@@ -767,13 +772,14 @@ function createDustLayer(dustCount, sizeMult, layerIndex, dustLayerType) {
   
   const dust = new THREE.Points(geometry, dustMaterial);
   dustParticles = dust;
+  materials.dust = dustMaterial;
   scene.add(dust);
 }
 
 // Create nebula clouds for extra depth
 function createNebulaClouds() {
   for (let i = 0; i < 6; i++) {
-    const cloudGeometry = new THREE.PlaneGeometry(25 + i * 5, 20 + i * 4, 128, 128);
+    const cloudGeometry = new THREE.PlaneGeometry(25 + i * 5, 20 + i * 4, 64, 64); // Reduced segments
     
     const cloudMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -844,40 +850,51 @@ function animateFrame() {
   
   // Camera breathing effect
   const breathingIntensity = 0.5 + 0.3 * Math.sin(time * cameraOscillation);
-  camera.position.z = 0.2 * Math.sin(time * cameraOscillation * 1.3);
-  camera.rotation.z = 0.002 * Math.sin(time * cameraOscillation * 0.7);
+  if (camera) {
+    camera.position.z = 0.2 * Math.sin(time * cameraOscillation * 1.3);
+    camera.rotation.z = 0.002 * Math.sin(time * cameraOscillation * 0.7);
+  }
   
   // Update galaxy materials
   materials.galaxy.forEach((material, index) => {
-    material.uniforms.time.value = time;
-    material.uniforms.cameraBreathing.value = breathingIntensity;
+    if (material && material.uniforms) {
+      material.uniforms.time.value = time;
+      material.uniforms.cameraBreathing.value = breathingIntensity;
+    }
   });
   
   // Update star materials
   materials.stars.forEach((material, index) => {
-    material.uniforms.time.value = time;
-    material.uniforms.cameraBreathing.value = breathingIntensity;
+    if (material && material.uniforms) {
+      material.uniforms.time.value = time;
+      material.uniforms.cameraBreathing.value = breathingIntensity;
+    }
   });
   
   // Update dust
-  if (materials.dust) {
+  if (materials.dust && materials.dust.uniforms) {
     materials.dust.uniforms.time.value = time;
   }
   
   // Update nebula clouds
   materials.nebula.forEach(material => {
-    material.uniforms.time.value = time;
+    if (material && material.uniforms) {
+      material.uniforms.time.value = time;
+    }
   });
   
   // Dynamic lighting adjustments
   const dynamicBrightness = 1.0 + 0.1 * Math.sin(time * 0.0001);
   materials.galaxy.forEach(material => {
-    if (material.uniforms.brightness) {
-      material.uniforms.brightness.value = material.uniforms.brightness.value * dynamicBrightness;
+    if (material && material.uniforms && material.uniforms.brightness) {
+      const originalBrightness = material.uniforms.brightness.value;
+      material.uniforms.brightness.value = originalBrightness * dynamicBrightness;
     }
   });
   
-  renderer.render(scene, camera);
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+  }
   animationId = requestAnimationFrame(animateFrame);
 }
 
@@ -892,81 +909,131 @@ function handleResize() {
   camera.updateProjectionMatrix();
   
   renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3.0)); // Support 3x for ultra-high DPI
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0)); // Cap at 2x for performance
 }
 
 // MAIN INITIALIZATION - INSANE 4K GALAXY
 export function initScene2Background(containerElement) {
-  if (isInitialized) {
+  try {
+    if (isInitialized) {
+      disposeScene2Background();
+    }
+    
+    // Validate container
+    if (!containerElement) {
+      console.error('Container element is required');
+      return;
+    }
+    
+    // Check if THREE is available
+    if (typeof THREE === 'undefined') {
+      console.error('THREE.js not loaded. Please ensure Three.js is included before this module.');
+      return;
+    }
+    
+    container = containerElement;
+    const width = container.clientWidth || 800;
+    const height = container.clientHeight || 600;
+    
+    // Create scene with fog
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x000102, 50, 100);
+    
+    // Enhanced camera with wider FOV
+    camera = new THREE.PerspectiveCamera(90, width / height, 0.1, 200);
+    camera.position.set(0, 0, 0);
+    camera.lookAt(0, 0, -10);
+    
+    // ULTRA HIGH-END RENDERER SETTINGS
+    const rendererOptions = {
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+      precision: 'highp'
+    };
+    
+    // Check for logarithmic depth buffer support
+    try {
+      rendererOptions.logarithmicDepthBuffer = true;
+    } catch (e) {
+      console.warn('Logarithmic depth buffer not supported');
+    }
+    
+    renderer = new THREE.WebGLRenderer(rendererOptions);
+    
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+    renderer.setClearColor(0x000102, 1);
+    
+    // Advanced rendering settings with fallbacks
+    try {
+      if (renderer.outputEncoding !== undefined) {
+        renderer.outputEncoding = THREE.sRGBEncoding;
+      }
+      if (renderer.toneMapping !== undefined) {
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.4;
+      }
+    } catch (e) {
+      console.warn('Advanced rendering features not supported');
+    }
+    
+    renderer.shadowMap.enabled = false; // Disable for performance
+    
+    // Style canvas
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.zIndex = '-1';
+    renderer.domElement.style.pointerEvents = 'none';
+    renderer.domElement.style.filter = 'contrast(1.1) saturate(1.3) brightness(1.05)';
+    
+    container.appendChild(renderer.domElement);
+    
+    // Create all scene components with error handling
+    try {
+      createInsaneGalaxyLayers();
+      console.log('✓ Galaxy layers created');
+      
+      createInsaneStarField();
+      console.log('✓ Star field created');
+      
+      createCosmicDust();
+      console.log('✓ Cosmic dust created');
+      
+      createNebulaClouds();
+      console.log('✓ Nebula clouds created');
+    } catch (error) {
+      console.error('Error creating scene components:', error);
+      return;
+    }
+    
+    // Add resize listener
+    window.addEventListener('resize', handleResize);
+    
+    // Start animation
+    isInitialized = true;
+    animateFrame();
+    
+    console.log('🌌 INSANE 4K SPIRAL GALAXY MASTERPIECE INITIALIZED 🌌');
+    console.log('📊 Stats: 12,500+ stars, 2,200+ dust particles, 9 galaxy layers');
+    console.log('🎨 Features: HDR colors, 8-octave noise, realistic stellar types');
+    
+  } catch (error) {
+    console.error('Failed to initialize galaxy scene:', error);
     disposeScene2Background();
   }
-  
-  container = containerElement;
-  const width = container.clientWidth;
-  const height = container.clientHeight;
-  
-  // Create scene with fog
-  scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x000102, 50, 100);
-  
-  // Enhanced camera with wider FOV
-  camera = new THREE.PerspectiveCamera(90, width / height, 0.1, 200);
-  camera.position.set(0, 0, 0);
-  camera.lookAt(0, 0, -10);
-  
-  // ULTRA HIGH-END RENDERER SETTINGS
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true,
-    powerPreference: 'high-performance',
-    precision: 'highp',
-    logarithmicDepthBuffer: true
-  });
-  
-  renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3.0));
-  renderer.setClearColor(0x000102, 1);
-  
-  // Advanced rendering settings
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.4;
-  renderer.shadowMap.enabled = false; // Disable for performance
-  
-  // Style canvas
-  renderer.domElement.style.position = 'absolute';
-  renderer.domElement.style.top = '0';
-  renderer.domElement.style.left = '0';
-  renderer.domElement.style.zIndex = '-1';
-  renderer.domElement.style.pointerEvents = 'none';
-  renderer.domElement.style.filter = 'contrast(1.1) saturate(1.3) brightness(1.05)';
-  
-  container.appendChild(renderer.domElement);
-  
-  // Create all scene components
-  createInsaneGalaxyLayers();
-  createInsaneStarField();
-  createCosmicDust();
-  createNebulaClouds();
-  
-  // Add resize listener
-  window.addEventListener('resize', handleResize);
-  
-  // Start animation
-  isInitialized = true;
-  animateFrame();
-  
-  console.log('🌌 INSANE 4K SPIRAL GALAXY MASTERPIECE INITIALIZED 🌌');
-  console.log('📊 Stats: 12,500+ stars, 2,200+ dust particles, 9 galaxy layers');
-  console.log('🎨 Features: HDR colors, 12-octave noise, realistic stellar types');
 }
 
 export function updateScene2Background(scrollProgress) {
   // Background is autonomous - no scroll dependency
+  // Could add subtle scroll-based effects here if needed
 }
 
 export function disposeScene2Background() {
   if (!isInitialized) return;
+  
+  console.log('🌌 Disposing galaxy scene...');
   
   if (animationId) {
     cancelAnimationFrame(animationId);
@@ -992,7 +1059,7 @@ export function disposeScene2Background() {
   
   if (renderer) {
     renderer.dispose();
-    if (container && renderer.domElement) {
+    if (container && renderer.domElement && container.contains(renderer.domElement)) {
       container.removeChild(renderer.domElement);
     }
   }
