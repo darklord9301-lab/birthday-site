@@ -130,8 +130,8 @@ function lockBodyPosition() {
     document.body.style.height = fixedDimensions.height + 'px';
     document.body.style.overflow = 'hidden';
     
-    // Prevent touch scrolling on mobile
-    document.body.style.touchAction = 'none';
+    // Allow touch actions on interactive elements - CRITICAL FIX
+    document.body.style.touchAction = 'manipulation';
     document.body.style.userSelect = 'none';
     
     // Prevent zoom on mobile
@@ -376,7 +376,8 @@ function createPanelStyles() {
             /* Mobile-specific fixes */
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: none;
-            touch-action: none;
+            /* CRITICAL: Allow touch actions for interactive elements */
+            touch-action: manipulation;
         }
         
         .panel-overlay.visible {
@@ -405,12 +406,13 @@ function createPanelStyles() {
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             
-            /* Lock the container completely */
-            touch-action: none;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
+            /* CRITICAL: Allow touch interactions */
+            touch-action: manipulation;
+            /* Allow text selection in input */
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
         }
         
         .panel-overlay.visible .panel-container {
@@ -708,9 +710,14 @@ function createPanelStyles() {
                 0 0 40px rgba(0, 255, 255, 0.2),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
             
-            /* Mobile touch optimizations */
+            /* CRITICAL: Mobile touch optimizations */
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            /* Ensure button is clickable */
+            pointer-events: auto;
+            /* Large touch target for mobile */
+            min-height: 60px;
+            min-width: 120px;
         }
         
         .panel-button:hover {
@@ -729,11 +736,17 @@ function createPanelStyles() {
         
         .panel-button:active {
             transform: translateY(-1px);
+            /* Visual feedback for touch */
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 255, 0.15) 0%,
+                rgba(255, 0, 255, 0.15) 100%
+            );
         }
         
         .button-text {
             position: relative;
             z-index: 2;
+            pointer-events: none; /* Let clicks pass through to button */
         }
         
         .button-glow {
@@ -749,6 +762,7 @@ function createPanelStyles() {
             );
             transition: left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             z-index: 1;
+            pointer-events: none;
         }
         
         .panel-button:hover .button-glow {
@@ -765,6 +779,7 @@ function createPanelStyles() {
             border-radius: 50%;
             transform: translate(-50%, -50%);
             transition: all 0.6s ease;
+            pointer-events: none;
         }
         
         .panel-button:active .button-ripple {
@@ -793,6 +808,8 @@ function createPanelStyles() {
                 padding: 15px 40px;
                 font-size: 1.1rem;
                 letter-spacing: 1px;
+                /* Larger touch target on small screens */
+                min-height: 56px;
             }
         }
         
@@ -846,6 +863,8 @@ function handleSubmit(event) {
     const answer = input.value.trim().toLowerCase();
     const panel = document.getElementById('security-panel');
     
+    console.log('Form submitted with answer:', answer); // Debug log
+    
     if (answer === 'urmi') {
         playClickSound();
         stopGlitterEffect();
@@ -862,6 +881,8 @@ function handleSubmit(event) {
         }, 800);
         
     } else {
+        console.log('Wrong answer, triggering shake'); // Debug log
+        
         // Enhanced shake with guaranteed position restoration
         panel.classList.add('shake');
         input.value = '';
@@ -921,48 +942,100 @@ export function showPanel() {
         const nextButton = document.getElementById('panel-next-btn');
         const input = document.getElementById('security-answer');
         
-        nextButton.addEventListener('click', handleSubmit);
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        console.log('Button found:', !!nextButton); // Debug log
+        console.log('Input found:', !!input); // Debug log
+        
+        // CRITICAL FIX: Add multiple event listeners for better mobile compatibility
+        if (nextButton) {
+            // Click event
+            nextButton.addEventListener('click', (e) => {
+                console.log('Button clicked'); // Debug log
                 handleSubmit(e);
-            }
-        });
+            });
+            
+            // Touch events for mobile
+            nextButton.addEventListener('touchstart', (e) => {
+                console.log('Button touched'); // Debug log
+                // Visual feedback
+                nextButton.style.transform = 'translateY(-1px)';
+                nextButton.style.background = 'linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(255, 0, 255, 0.15) 100%)';
+            }, { passive: true });
+            
+            nextButton.addEventListener('touchend', (e) => {
+                console.log('Touch ended'); // Debug log
+                // Reset visual state
+                nextButton.style.transform = '';
+                nextButton.style.background = '';
+                
+                // Trigger click after a small delay
+                setTimeout(() => {
+                    handleSubmit(e);
+                }, 50);
+            }, { passive: false });
+            
+            // Prevent touch event conflicts
+            nextButton.addEventListener('touchcancel', () => {
+                console.log('Touch cancelled');
+                nextButton.style.transform = '';
+                nextButton.style.background = '';
+            });
+        }
         
-        // Enhanced event handlers for ultra-stable positioning
-        input.addEventListener('focus', () => {
-            setTimeout(() => {
-                applyFixedPositioning();
-                // Double-check positioning after potential keyboard slide
-                setTimeout(() => applyFixedPositioning(), 200);
-                setTimeout(() => applyFixedPositioning(), 500);
-            }, 50);
-        });
+        if (input) {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    console.log('Enter key pressed'); // Debug log
+                    handleSubmit(e);
+                }
+            });
+            
+            // Enhanced event handlers for ultra-stable positioning
+            input.addEventListener('focus', () => {
+                setTimeout(() => {
+                    applyFixedPositioning();
+                    // Double-check positioning after potential keyboard slide
+                    setTimeout(() => applyFixedPositioning(), 200);
+                    setTimeout(() => applyFixedPositioning(), 500);
+                }, 50);
+            });
+            
+            input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    applyFixedPositioning();
+                    setTimeout(() => applyFixedPositioning(), 200);
+                }, 50);
+            });
+            
+            // Listen for any input changes that might affect positioning
+            input.addEventListener('input', () => {
+                if (repositionTimer) clearTimeout(repositionTimer);
+                repositionTimer = setTimeout(() => applyFixedPositioning(), 100);
+            });
+        }
         
-        input.addEventListener('blur', () => {
-            setTimeout(() => {
-                applyFixedPositioning();
-                setTimeout(() => applyFixedPositioning(), 200);
-            }, 50);
-        });
-        
-        // Listen for any input changes that might affect positioning
-        input.addEventListener('input', () => {
-            if (repositionTimer) clearTimeout(repositionTimer);
-            repositionTimer = setTimeout(() => applyFixedPositioning(), 100);
-        });
-        
-        // Handle touch events that might interfere
-        panelContainer.addEventListener('touchstart', (e) => {
-            // Allow input interactions but prevent scrolling
-            if (!e.target.closest('.panel-input')) {
+        // IMPROVED: Handle touch events more carefully
+        if (panelContainer) {
+            panelContainer.addEventListener('touchstart', (e) => {
+                const target = e.target;
+                console.log('Touch target:', target.tagName, target.className);
+                
+                // Allow interactions with button and input
+                if (target.closest('.panel-button') || target.closest('.panel-input')) {
+                    return; // Allow the touch
+                }
+                
+                // Prevent scrolling on other areas
                 e.preventDefault();
-            }
-        }, { passive: false });
-        
-        panelContainer.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            applyFixedPositioning();
-        }, { passive: false });
+            }, { passive: false });
+            
+            panelContainer.addEventListener('touchmove', (e) => {
+                // Only prevent if not interacting with input or button
+                if (!e.target.closest('.panel-input') && !e.target.closest('.panel-button')) {
+                    e.preventDefault();
+                    applyFixedPositioning();
+                }
+            }, { passive: false });
+        }
         
         // Show panel with multiple positioning checks
         setTimeout(() => {
