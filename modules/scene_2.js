@@ -387,7 +387,7 @@ function addEventListeners() {
     eventHandlers.click = handleClick;
     document.addEventListener('click', eventHandlers.click);
     
-    // Touch events for mobile
+    // Touch events for mobile (vertical swipe like reels)
     eventHandlers.touchstart = handleTouchStart;
     eventHandlers.touchend = handleTouchEnd;
     document.addEventListener('touchstart', eventHandlers.touchstart, { passive: false });
