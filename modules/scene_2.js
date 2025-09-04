@@ -40,16 +40,22 @@ let loveTextElement = null;
 
 // Text blocks for easy editing
 const textBlocks = [
-    "Happy Birthday Urmi! 🎉",
-    "Today marks another beautiful year of your incredible journey through life.",
-    "Your smile lights up every room you enter, bringing joy to everyone around you.",
-    "May this new year bring you countless adventures, wonderful surprises, and dreams come true.",
-    "You have a heart of gold and a spirit that inspires others to be their best selves.",
-    "Here's to celebrating you today and all the amazing things you'll accomplish this year.",
-    "Wishing you laughter that echoes, love that surrounds you, and happiness that never fades.",
-    "May every moment of your special day be filled with the magic you bring to our lives.",
-    "Happy Birthday, Urmi! You are truly one of a kind! ✨🎂"
+    "Heyy!! 😍✨ R u real?? 💫",
+    "Today my precious Urmi turns 20... 🎉🎂💖",
+    "The thought of your smile 😄💛 lights up my every morning, brighter than the sun ☀️🌼!!",
+    "Your laughter is my favourite melody 🎶💓 and your eyes hold my whole universe 🌌💙",
+    "You’re my sunshine ☀️, my rainbow 🌈, and my little piece of forever 💫💞",
+    "With you, every second feels like a fairytale 🏰👑💖",
+    "If I could, I’d gift you the stars 🌟🌙 because you deserve the whole sky 💌",
+    "Ami shob somoy tor shathei thakbo... 🤝💓 forever & always 💌",
+    "May this new year 🌟 bring you countless adventures 🗺️, wonderful surprises 🎁, and all your dreams come true 🌈💫.",
+    "Wishing you laughter that echoes 😂💫, love that surrounds you ❤️🤗, and happiness that never fades 🌸💖.",
+    "Tor ei special din’er prottekta muhurto hok magical ✨ just like the magic you bring to my life 💎🌹",
+    "Here's to celebrating you 🎊 today and for all the days upto the end of time ⏳💞",
+    "No distance, no time ⏳, nothing in this world can change how much you mean to me 💕",
+    "Happy Birthday, Urmi! 🎂🎉 You are mine...💘💍✨"
 ];
+
 
 // Initialize background music
 async function initBackgroundMusic() {
