@@ -112,8 +112,8 @@ function createGlassPanelStyles() {
         width: 'min(90vw, 600px)',
         minHeight: '300px',
         maxHeight: '70vh',
-        background: 'rgba(255, 255, 255, 0.0000000000000000000000001)', // Reduced from 0.1 to 0.05
-        backdropFilter: 'blur(20px)',
+        background: 'rgba(255, 255, 255, 0)', // Reduced from 0.1 to 0.05
+        backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(20px)',
         border: '1px solid rgba(255, 255, 255, 0.1)', // Reduced from 0.2 to 0.1
         borderRadius: '20px',
