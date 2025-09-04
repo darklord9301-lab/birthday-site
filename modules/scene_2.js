@@ -341,6 +341,35 @@ async function typeLoveText(text) {
     const words = text.split(' ');
     let currentText = '';
     
+    // Calculate total typing duration for smooth music fade
+    const totalChars = text.length;
+    const totalWords = words.length;
+    const estimatedDuration = (totalChars * 150) + ((totalWords - 1) * 300); // Character time + word pauses
+    const musicFadeDuration = estimatedDuration;
+    
+    // Start fading out the music gradually
+    if (backgroundMusic && !backgroundMusic.paused) {
+        const startVolume = backgroundMusic.volume;
+        const fadeSteps = 50;
+        const volumeDecrement = startVolume / fadeSteps;
+        const fadeInterval = musicFadeDuration / fadeSteps;
+        
+        let currentStep = 0;
+        const fadeIntervalId = setInterval(() => {
+            if (backgroundMusic && currentStep < fadeSteps) {
+                const newVolume = Math.max(0, startVolume - (volumeDecrement * currentStep));
+                backgroundMusic.volume = newVolume;
+                currentStep++;
+            } else {
+                clearInterval(fadeIntervalId);
+                if (backgroundMusic) {
+                    backgroundMusic.pause();
+                    backgroundMusic.currentTime = 0;
+                }
+            }
+        }, fadeInterval);
+    }
+    
     for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
         const word = words[wordIndex];
         
@@ -371,6 +400,8 @@ async function typeLoveText(text) {
             });
         }
     }
+    
+    console.log('Love text completed, music should be fully faded by now');
 }
 
 // Wipe animation before next block
