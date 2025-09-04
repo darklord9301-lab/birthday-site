@@ -1,5 +1,5 @@
 // /modules/scene2_background.js
-// Space nebula background with colorful clouds, twinkling stars, and floating dust particles
+// Spiral galaxy background with vibrant colors, slow rotation, and 4K quality
 
 import * as THREE from '../libs/three.module.js';
 
@@ -13,20 +13,23 @@ let isInitialized = false;
 
 // Animation state
 let time = 0;
-const driftSpeed = { x: 0.0002, y: 0.0001 }; // Slow diagonal drift
+const driftSpeed = { x: 0.0001, y: 0.0001 }; // Slower drift for galaxy rotation
+const galaxyRotationSpeed = 0.0002; // Very slow galaxy rotation
 
 // Scene objects
-const nebulaLayers = [];
+const galaxyLayers = [];
 const starSystems = [];
 let dustParticles = null;
-let glowingPlanet = null;
+let galaxyCore = null;
+let galaxyArms = [];
 
 // Materials cache
 const materials = {
-  nebula: [],
+  galaxy: [],
   stars: null,
   dust: null,
-  planet: null
+  core: null,
+  arms: []
 };
 
 // Seeded random for consistent generation
@@ -43,65 +46,81 @@ class SeededRandom {
 
 const random = new SeededRandom(777);
 
-// Custom shaders for nebula effect
-const nebulaVertexShader = `
+// Enhanced spiral galaxy vertex shader
+const galaxyVertexShader = `
   varying vec2 vUv;
   varying vec3 vWorldPosition;
+  uniform float time;
+  uniform float rotationSpeed;
   
   void main() {
     vUv = uv;
+    
+    // Apply rotation to the entire plane
+    float angle = time * rotationSpeed;
+    mat2 rotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    
+    vec2 rotatedUv = rotation * (uv - 0.5) + 0.5;
+    vUv = rotatedUv;
+    
     vec4 worldPosition = modelMatrix * vec4(position, 1.0);
     vWorldPosition = worldPosition.xyz;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
 
-const nebulaFragmentShader = `
+// Enhanced spiral galaxy fragment shader
+const galaxyFragmentShader = `
   uniform float time;
-  uniform vec3 color1;
-  uniform vec3 color2;
-  uniform vec3 color3;
+  uniform vec3 coreColor;
+  uniform vec3 armColor1;
+  uniform vec3 armColor2;
+  uniform vec3 armColor3;
   uniform float intensity;
   uniform float layer;
   uniform vec2 drift;
+  uniform float rotationSpeed;
   
   varying vec2 vUv;
   varying vec3 vWorldPosition;
   
-  // Improved noise functions
-  vec2 hash22(vec2 p) {
-    vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.xx + p3.yz) * p3.zy);
+  // High-quality noise functions for 4K detail
+  vec3 hash33(vec3 p3) {
+    p3 = fract(p3 * vec3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yxz + 33.33);
+    return fract((p3.xxy + p3.yxx) * p3.zyx);
   }
   
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
+  float noise3D(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    vec3 u = f * f * (3.0 - 2.0 * f);
     
-    vec2 a = hash22(i);
-    vec2 b = hash22(i + vec2(1.0, 0.0));
-    vec2 c = hash22(i + vec2(0.0, 1.0));
-    vec2 d = hash22(i + vec2(1.0, 1.0));
+    vec3 a = hash33(i);
+    vec3 b = hash33(i + vec3(1.0, 0.0, 0.0));
+    vec3 c = hash33(i + vec3(0.0, 1.0, 0.0));
+    vec3 d = hash33(i + vec3(1.0, 1.0, 0.0));
+    vec3 e = hash33(i + vec3(0.0, 0.0, 1.0));
+    vec3 f1 = hash33(i + vec3(1.0, 0.0, 1.0));
+    vec3 g = hash33(i + vec3(0.0, 1.0, 1.0));
+    vec3 h = hash33(i + vec3(1.0, 1.0, 1.0));
     
-    float noiseA = dot(a, f);
-    float noiseB = dot(b, f - vec2(1.0, 0.0));
-    float noiseC = dot(c, f - vec2(0.0, 1.0));
-    float noiseD = dot(d, f - vec2(1.0, 1.0));
-    
-    return mix(mix(noiseA, noiseB, u.x), mix(noiseC, noiseD, u.x), u.y);
+    return mix(
+      mix(mix(a.x, b.x, u.x), mix(c.x, d.x, u.x), u.y),
+      mix(mix(e.x, f1.x, u.x), mix(g.x, h.x, u.x), u.y),
+      u.z
+    );
   }
   
-  float fbm(vec2 p) {
+  float fbm(vec3 p) {
     float value = 0.0;
     float amplitude = 0.5;
     float frequency = 1.0;
     
-    for (int i = 0; i < 6; i++) {
-      value += amplitude * noise(p * frequency);
-      frequency *= 2.07;
-      amplitude *= 0.54;
+    for (int i = 0; i < 8; i++) {
+      value += amplitude * noise3D(p * frequency);
+      frequency *= 2.02;
+      amplitude *= 0.52;
     }
     return value;
   }
@@ -109,79 +128,127 @@ const nebulaFragmentShader = `
   void main() {
     vec2 uv = vUv;
     
-    // Apply layer-specific drift
-    uv += drift * time * (0.5 + layer * 0.3);
-    
-    // Multiple octaves of noise for complex nebula structure
-    float n1 = fbm(uv * 2.0 + time * 0.00003);
-    float n2 = fbm(uv * 1.2 + time * 0.00005 + vec2(100.0));
-    float n3 = fbm(uv * 3.5 + time * 0.00002 + vec2(200.0));
-    
-    // Combine noise patterns
-    float density = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
-    density = smoothstep(0.2, 0.8, density);
-    
-    // Distance-based falloff from center
-    vec2 center = vUv - 0.5;
+    // Center the UV coordinates
+    vec2 center = uv - 0.5;
     float dist = length(center);
-    float radialFalloff = 1.0 - smoothstep(0.3, 1.2, dist);
+    float angle = atan(center.y, center.x);
     
-    // Color mixing based on noise patterns
-    float colorMix1 = smoothstep(0.3, 0.7, n1);
-    float colorMix2 = smoothstep(0.4, 0.6, n2);
+    // Create spiral arms pattern
+    float spiralArms = 2.0; // Number of spiral arms
+    float spiralTightness = 3.0;
+    float spiralPhase = angle - dist * spiralTightness + time * rotationSpeed * 0.5;
     
-    vec3 finalColor = mix(color1, color2, colorMix1);
-    finalColor = mix(finalColor, color3, colorMix2 * 0.5);
+    // Multiple spiral patterns for complexity
+    float arm1 = sin(spiralPhase * spiralArms) * 0.5 + 0.5;
+    float arm2 = sin(spiralPhase * spiralArms + 3.14159) * 0.5 + 0.5;
     
-    // Add subtle brightness variation
-    float brightness = 0.8 + 0.4 * sin(time * 0.0001 + layer * 2.0);
+    // Add secondary spiral pattern
+    float fineSpiral = sin(spiralPhase * spiralArms * 2.0 + time * 0.0001) * 0.3 + 0.7;
+    
+    // Create galaxy core
+    float coreRadius = 0.15;
+    float coreIntensity = 1.0 - smoothstep(0.0, coreRadius, dist);
+    coreIntensity = pow(coreIntensity, 2.0) * 2.0;
+    
+    // Create arm density with distance falloff
+    float armIntensity = (arm1 + arm2) * 0.5 * fineSpiral;
+    armIntensity *= 1.0 - smoothstep(0.1, 0.8, dist); // Fade at edges
+    armIntensity *= exp(-dist * 2.0); // Exponential falloff
+    
+    // Add high-frequency noise for star formation regions
+    vec3 noisePos = vec3(uv * 4.0, time * 0.00002);
+    float detailNoise = fbm(noisePos) * 0.8;
+    float starFormation = fbm(noisePos * 2.0) * 0.6;
+    
+    // Combine all elements
+    float totalDensity = coreIntensity + armIntensity * (0.7 + detailNoise * 0.5);
+    totalDensity += starFormation * armIntensity * 0.3;
+    
+    // Color mixing based on distance and density
+    vec3 finalColor;
+    
+    if (dist < 0.2) {
+      // Core region - warm orange/yellow
+      finalColor = mix(coreColor, armColor1, smoothstep(0.0, 0.2, dist));
+    } else if (dist < 0.5) {
+      // Inner arms - blue/cyan
+      float mixFactor = (dist - 0.2) / 0.3;
+      finalColor = mix(armColor1, armColor2, mixFactor);
+      finalColor = mix(finalColor, armColor3, arm1 * 0.5);
+    } else {
+      // Outer regions - deep blue/purple
+      finalColor = armColor3;
+      finalColor = mix(finalColor, armColor2, starFormation * 0.3);
+    }
+    
+    // Add brightness variation for more realism
+    float brightness = 1.0 + 0.3 * sin(time * 0.0003 + angle * 2.0);
+    brightness += detailNoise * 0.4;
     finalColor *= brightness;
     
-    float alpha = density * radialFalloff * intensity;
+    // Enhance saturation for vibrant colors
+    float saturation = 1.3;
+    vec3 luminance = vec3(0.299, 0.587, 0.114);
+    float gray = dot(finalColor, luminance);
+    finalColor = mix(vec3(gray), finalColor, saturation);
+    
+    // Final alpha with smooth edges
+    float alpha = totalDensity * intensity;
+    alpha *= smoothstep(0.8, 0.6, dist); // Soft edge falloff
     
     gl_FragColor = vec4(finalColor, alpha);
   }
 `;
 
-// Star field shaders
+// Enhanced star field shaders for 4K quality
 const starVertexShader = `
   attribute float size;
   attribute float twinklePhase;
   attribute float twinkleSpeed;
+  attribute vec3 starColor;
   
   uniform float time;
   uniform vec2 drift;
+  uniform float galaxyRotation;
   
   varying float vTwinkle;
   varying float vSize;
+  varying vec3 vStarColor;
   
   void main() {
     vSize = size;
+    vStarColor = starColor;
     
-    // Twinkling effect
-    vTwinkle = 0.5 + 0.5 * sin(time * twinkleSpeed + twinklePhase);
+    // Enhanced twinkling with color variation
+    vTwinkle = 0.6 + 0.4 * sin(time * twinkleSpeed + twinklePhase);
     
     vec3 pos = position;
     
-    // Apply drift to stars
-    pos.x += drift.x * time;
-    pos.y += drift.y * time;
+    // Apply galaxy rotation to stars
+    float angle = galaxyRotation * time;
+    float cosA = cos(angle);
+    float sinA = sin(angle);
+    
+    float newX = pos.x * cosA - pos.y * sinA;
+    float newY = pos.x * sinA + pos.y * cosA;
+    
+    pos.x = newX;
+    pos.y = newY;
     
     // Wrap around screen bounds
-    pos.x = mod(pos.x + 25.0, 50.0) - 25.0;
-    pos.y = mod(pos.y + 15.0, 30.0) - 15.0;
+    pos.x = mod(pos.x + 30.0, 60.0) - 30.0;
+    pos.y = mod(pos.y + 20.0, 40.0) - 20.0;
     
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    gl_PointSize = size * vTwinkle * (300.0 / -mvPosition.z);
+    gl_PointSize = size * vTwinkle * (400.0 / -mvPosition.z);
     gl_Position = projectionMatrix * mvPosition;
   }
 `;
 
 const starFragmentShader = `
-  uniform vec3 starColor;
-  
   varying float vTwinkle;
   varying float vSize;
+  varying vec3 vStarColor;
   
   void main() {
     vec2 center = gl_PointCoord - 0.5;
@@ -189,146 +256,136 @@ const starFragmentShader = `
     
     if (dist > 0.5) discard;
     
-    // Soft star shape with glow
-    float alpha = pow(1.0 - dist * 2.0, 2.0) * vTwinkle;
+    // Enhanced star shape with HDR-like glow
+    float alpha = pow(1.0 - dist * 2.0, 3.0) * vTwinkle;
     
-    // Add outer glow for larger stars
-    if (vSize > 2.5) {
-      alpha += 0.3 * exp(-dist * 8.0) * vTwinkle;
+    // Add bright core and outer glow
+    alpha += 0.6 * exp(-dist * 12.0) * vTwinkle;
+    alpha += 0.2 * exp(-dist * 4.0) * vTwinkle;
+    
+    // Color enhancement for larger stars
+    vec3 finalColor = vStarColor;
+    if (vSize > 3.0) {
+      finalColor *= 1.2; // Brighter large stars
     }
     
-    gl_FragColor = vec4(starColor, alpha);
+    gl_FragColor = vec4(finalColor, alpha);
   }
 `;
 
-// Dust particle shaders
-const dustVertexShader = `
-  attribute float size;
-  attribute float opacity;
-  attribute vec3 velocity;
+// Create spiral galaxy layers
+function createGalaxyLayers() {
+  // Main galaxy layer with high resolution
+  const scale = 40; // Larger for 4K quality
+  const geometry = new THREE.PlaneGeometry(scale, scale, 256, 256); // High resolution
   
-  uniform float time;
-  uniform vec2 drift;
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      coreColor: { value: new THREE.Vector3(1.0, 0.8, 0.4) }, // Warm yellow-orange core
+      armColor1: { value: new THREE.Vector3(0.4, 0.8, 1.0) }, // Bright blue
+      armColor2: { value: new THREE.Vector3(0.2, 0.6, 0.9) }, // Deep blue
+      armColor3: { value: new THREE.Vector3(0.6, 0.3, 0.8) }, // Purple edges
+      intensity: { value: 0.8 },
+      layer: { value: 0 },
+      drift: { value: new THREE.Vector2(driftSpeed.x, driftSpeed.y) },
+      rotationSpeed: { value: galaxyRotationSpeed }
+    },
+    vertexShader: galaxyVertexShader,
+    fragmentShader: galaxyFragmentShader,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
   
-  varying float vOpacity;
+  const galaxy = new THREE.Mesh(geometry, material);
+  galaxy.position.set(0, 0, -25);
   
-  void main() {
-    vOpacity = opacity * (0.3 + 0.7 * sin(time * 0.001 + position.x * 0.1));
-    
-    vec3 pos = position;
-    
-    // Particle motion
-    pos += velocity * time * 0.01;
-    pos.x += drift.x * time * 0.5;
-    pos.y += drift.y * time * 0.5;
-    
-    // Wrap particles
-    pos.x = mod(pos.x + 30.0, 60.0) - 30.0;
-    pos.y = mod(pos.y + 20.0, 40.0) - 20.0;
-    pos.z = mod(pos.z + 15.0, 30.0) - 15.0;
-    
-    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    gl_PointSize = size * (200.0 / -mvPosition.z);
-    gl_Position = projectionMatrix * mvPosition;
-  }
-`;
-
-const dustFragmentShader = `
-  uniform vec3 dustColor;
+  materials.galaxy.push(material);
+  galaxyLayers.push(galaxy);
+  scene.add(galaxy);
   
-  varying float vOpacity;
+  // Additional background layer for depth
+  const bgGeometry = new THREE.PlaneGeometry(scale * 1.5, scale * 1.5, 128, 128);
+  const bgMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      coreColor: { value: new THREE.Vector3(0.2, 0.3, 0.6) },
+      armColor1: { value: new THREE.Vector3(0.1, 0.2, 0.4) },
+      armColor2: { value: new THREE.Vector3(0.3, 0.1, 0.5) },
+      armColor3: { value: new THREE.Vector3(0.1, 0.1, 0.3) },
+      intensity: { value: 0.3 },
+      layer: { value: 1 },
+      drift: { value: new THREE.Vector2(driftSpeed.x * 0.5, driftSpeed.y * 0.5) },
+      rotationSpeed: { value: galaxyRotationSpeed * 0.7 }
+    },
+    vertexShader: galaxyVertexShader,
+    fragmentShader: galaxyFragmentShader,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
   
-  void main() {
-    vec2 center = gl_PointCoord - 0.5;
-    float dist = length(center);
-    
-    if (dist > 0.5) discard;
-    
-    float alpha = (1.0 - dist * 2.0) * vOpacity * 0.4;
-    
-    gl_FragColor = vec4(dustColor, alpha);
-  }
-`;
-
-// Create nebula layers with different colors and scales
-function createNebulaLayers() {
-  const nebulaColors = [
-    // Purple-blue nebula
-    { c1: [0.4, 0.1, 0.8], c2: [0.8, 0.2, 0.9], c3: [0.2, 0.5, 1.0] },
-    // Pink-orange nebula
-    { c1: [0.9, 0.3, 0.5], c2: [1.0, 0.5, 0.2], c3: [0.8, 0.1, 0.6] },
-    // Green-blue nebula
-    { c1: [0.2, 0.8, 0.6], c2: [0.1, 0.6, 0.9], c3: [0.4, 0.9, 0.3] },
-    // Deep space blues
-    { c1: [0.1, 0.2, 0.6], c2: [0.3, 0.1, 0.8], c3: [0.0, 0.4, 0.7] }
-  ];
+  const bgGalaxy = new THREE.Mesh(bgGeometry, bgMaterial);
+  bgGalaxy.position.set(0, 0, -45);
   
-  for (let i = 0; i < 4; i++) {
-    const scale = 15 + i * 8;
-    const geometry = new THREE.PlaneGeometry(scale, scale);
-    
-    const colors = nebulaColors[i];
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-        color1: { value: new THREE.Vector3(...colors.c1) },
-        color2: { value: new THREE.Vector3(...colors.c2) },
-        color3: { value: new THREE.Vector3(...colors.c3) },
-        intensity: { value: 0.4 + random.next() * 0.3 },
-        layer: { value: i },
-        drift: { value: new THREE.Vector2(driftSpeed.x * (1 + i * 0.3), driftSpeed.y * (1 + i * 0.2)) }
-      },
-      vertexShader: nebulaVertexShader,
-      fragmentShader: nebulaFragmentShader,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    });
-    
-    const nebula = new THREE.Mesh(geometry, material);
-    nebula.position.set(
-      (random.next() - 0.5) * 20,
-      (random.next() - 0.5) * 15,
-      -20 - i * 5
-    );
-    
-    nebula.rotation.z = random.next() * Math.PI * 2;
-    
-    materials.nebula.push(material);
-    nebulaLayers.push(nebula);
-    scene.add(nebula);
-  }
+  materials.galaxy.push(bgMaterial);
+  galaxyLayers.push(bgGalaxy);
+  scene.add(bgGalaxy);
 }
 
-// Create twinkling star field
+// Create enhanced star field with color variation
 function createStarField() {
-  const starCount = 800;
+  const starCount = 1500; // More stars for 4K quality
   const positions = new Float32Array(starCount * 3);
   const sizes = new Float32Array(starCount);
   const twinklePhases = new Float32Array(starCount);
   const twinkleSpeeds = new Float32Array(starCount);
+  const colors = new Float32Array(starCount * 3);
+  
+  // Star color palettes
+  const starColorTypes = [
+    [1.0, 1.0, 1.0],    // White
+    [0.8, 0.9, 1.0],    // Blue-white
+    [1.0, 0.9, 0.8],    // Yellow-white
+    [1.0, 0.8, 0.6],    // Orange
+    [0.9, 0.7, 0.9],    // Purple-pink
+    [0.7, 0.9, 1.0],    // Blue
+  ];
   
   for (let i = 0; i < starCount; i++) {
     const i3 = i * 3;
     
-    // Distribute stars in 3D space
-    positions[i3] = (random.next() - 0.5) * 50;
-    positions[i3 + 1] = (random.next() - 0.5) * 30;
-    positions[i3 + 2] = -5 - random.next() * 40;
+    // Distribute stars with galaxy-like clustering
+    const angle = random.next() * Math.PI * 2;
+    const radius = Math.pow(random.next(), 0.7) * 25; // Clustered toward center
     
-    // Vary star sizes (most small, few large)
+    positions[i3] = Math.cos(angle) * radius + (random.next() - 0.5) * 10;
+    positions[i3 + 1] = Math.sin(angle) * radius + (random.next() - 0.5) * 8;
+    positions[i3 + 2] = -5 - random.next() * 35;
+    
+    // Size distribution with more large stars
     const sizeRoll = random.next();
-    if (sizeRoll > 0.95) {
-      sizes[i] = 3.5 + random.next() * 2.5; // Large bright stars
-    } else if (sizeRoll > 0.85) {
-      sizes[i] = 2.0 + random.next() * 1.5; // Medium stars
+    if (sizeRoll > 0.92) {
+      sizes[i] = 4.0 + random.next() * 3.0; // Very large bright stars
+    } else if (sizeRoll > 0.8) {
+      sizes[i] = 2.5 + random.next() * 2.0; // Large stars
+    } else if (sizeRoll > 0.6) {
+      sizes[i] = 1.5 + random.next() * 1.5; // Medium stars
     } else {
-      sizes[i] = 0.8 + random.next() * 1.2; // Small stars
+      sizes[i] = 0.8 + random.next() * 1.0; // Small stars
     }
     
     twinklePhases[i] = random.next() * Math.PI * 2;
-    twinkleSpeeds[i] = 0.0005 + random.next() * 0.002;
+    twinkleSpeeds[i] = 0.0003 + random.next() * 0.0015;
+    
+    // Assign star colors
+    const colorType = starColorTypes[Math.floor(random.next() * starColorTypes.length)];
+    colors[i3] = colorType[0];
+    colors[i3 + 1] = colorType[1];
+    colors[i3 + 2] = colorType[2];
   }
   
   const geometry = new THREE.BufferGeometry();
@@ -336,12 +393,13 @@ function createStarField() {
   geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
   geometry.setAttribute('twinklePhase', new THREE.BufferAttribute(twinklePhases, 1));
   geometry.setAttribute('twinkleSpeed', new THREE.BufferAttribute(twinkleSpeeds, 1));
+  geometry.setAttribute('starColor', new THREE.BufferAttribute(colors, 3));
   
   materials.stars = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
-      starColor: { value: new THREE.Vector3(0.9, 0.95, 1.0) },
-      drift: { value: new THREE.Vector2(driftSpeed.x, driftSpeed.y) }
+      drift: { value: new THREE.Vector2(driftSpeed.x, driftSpeed.y) },
+      galaxyRotation: { value: galaxyRotationSpeed * 0.8 }
     },
     vertexShader: starVertexShader,
     fragmentShader: starFragmentShader,
@@ -355,9 +413,9 @@ function createStarField() {
   scene.add(stars);
 }
 
-// Create floating dust particles
+// Create cosmic dust with galaxy rotation
 function createDustParticles() {
-  const dustCount = 200;
+  const dustCount = 500; // More dust for richness
   const positions = new Float32Array(dustCount * 3);
   const sizes = new Float32Array(dustCount);
   const opacities = new Float32Array(dustCount);
@@ -366,17 +424,21 @@ function createDustParticles() {
   for (let i = 0; i < dustCount; i++) {
     const i3 = i * 3;
     
-    positions[i3] = (random.next() - 0.5) * 60;
-    positions[i3 + 1] = (random.next() - 0.5) * 40;
-    positions[i3 + 2] = -2 - random.next() * 30;
+    // Distribute dust in spiral pattern
+    const angle = random.next() * Math.PI * 2;
+    const radius = Math.pow(random.next(), 0.8) * 30;
     
-    sizes[i] = 1.0 + random.next() * 2.0;
-    opacities[i] = 0.3 + random.next() * 0.7;
+    positions[i3] = Math.cos(angle) * radius;
+    positions[i3 + 1] = Math.sin(angle) * radius;
+    positions[i3 + 2] = -2 - random.next() * 25;
     
-    // Random drift velocities
-    velocities[i3] = (random.next() - 0.5) * 0.5;
-    velocities[i3 + 1] = (random.next() - 0.5) * 0.3;
-    velocities[i3 + 2] = (random.next() - 0.5) * 0.2;
+    sizes[i] = 0.8 + random.next() * 1.5;
+    opacities[i] = 0.2 + random.next() * 0.5;
+    
+    // Rotational velocities
+    velocities[i3] = -Math.sin(angle) * 0.3;
+    velocities[i3 + 1] = Math.cos(angle) * 0.3;
+    velocities[i3 + 2] = (random.next() - 0.5) * 0.1;
   }
   
   const geometry = new THREE.BufferGeometry();
@@ -385,11 +447,70 @@ function createDustParticles() {
   geometry.setAttribute('opacity', new THREE.BufferAttribute(opacities, 1));
   geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
   
+  const dustVertexShader = `
+    attribute float size;
+    attribute float opacity;
+    attribute vec3 velocity;
+    
+    uniform float time;
+    uniform vec2 drift;
+    uniform float galaxyRotation;
+    
+    varying float vOpacity;
+    
+    void main() {
+      vOpacity = opacity * (0.4 + 0.6 * sin(time * 0.0008 + position.x * 0.05));
+      
+      vec3 pos = position;
+      
+      // Galaxy rotation
+      float angle = galaxyRotation * time;
+      float cosA = cos(angle);
+      float sinA = sin(angle);
+      
+      float newX = pos.x * cosA - pos.y * sinA;
+      float newY = pos.x * sinA + pos.y * cosA;
+      
+      pos.x = newX + velocity.x * time * 0.005;
+      pos.y = newY + velocity.y * time * 0.005;
+      pos.z += velocity.z * time * 0.002;
+      
+      // Wrap particles
+      float maxDist = 35.0;
+      if (length(vec2(pos.x, pos.y)) > maxDist) {
+        pos.x *= 0.8;
+        pos.y *= 0.8;
+      }
+      
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_PointSize = size * (250.0 / -mvPosition.z);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `;
+  
+  const dustFragmentShader = `
+    uniform vec3 dustColor;
+    
+    varying float vOpacity;
+    
+    void main() {
+      vec2 center = gl_PointCoord - 0.5;
+      float dist = length(center);
+      
+      if (dist > 0.5) discard;
+      
+      float alpha = (1.0 - dist * 2.0) * vOpacity * 0.6;
+      
+      gl_FragColor = vec4(dustColor, alpha);
+    }
+  `;
+  
   materials.dust = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
-      dustColor: { value: new THREE.Vector3(0.8, 0.9, 1.0) },
-      drift: { value: new THREE.Vector2(driftSpeed.x, driftSpeed.y) }
+      dustColor: { value: new THREE.Vector3(0.7, 0.8, 1.0) },
+      drift: { value: new THREE.Vector2(driftSpeed.x, driftSpeed.y) },
+      galaxyRotation: { value: galaxyRotationSpeed * 0.6 }
     },
     vertexShader: dustVertexShader,
     fragmentShader: dustFragmentShader,
@@ -402,42 +523,14 @@ function createDustParticles() {
   scene.add(dustParticles);
 }
 
-// Create optional glowing planet
-function createGlowingPlanet() {
-  const planetGeometry = new THREE.SphereGeometry(3, 32, 32);
-  
-  materials.planet = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(0.8, 0.4, 0.9),
-    transparent: true,
-    opacity: 0.6
-  });
-  
-  glowingPlanet = new THREE.Mesh(planetGeometry, materials.planet);
-  glowingPlanet.position.set(18, -10, -35);
-  
-  // Add atmospheric glow
-  const glowGeometry = new THREE.SphereGeometry(4.5, 32, 32);
-  const glowMaterial = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(0.4, 0.2, 0.8),
-    transparent: true,
-    opacity: 0.15,
-    side: THREE.BackSide
-  });
-  
-  const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-  glowingPlanet.add(glow);
-  
-  scene.add(glowingPlanet);
-}
-
-// Animation loop
+// Animation loop with enhanced timing
 function animateFrame() {
   if (!isInitialized) return;
   
   time += 16; // ~60fps timing
   
   // Update all material uniforms
-  materials.nebula.forEach(material => {
+  materials.galaxy.forEach(material => {
     material.uniforms.time.value = time;
   });
   
@@ -449,17 +542,11 @@ function animateFrame() {
     materials.dust.uniforms.time.value = time;
   }
   
-  // Subtle planet glow animation
-  if (glowingPlanet && materials.planet) {
-    const glow = 0.6 + 0.2 * Math.sin(time * 0.001);
-    materials.planet.opacity = glow;
-  }
-  
   renderer.render(scene, camera);
   animationId = requestAnimationFrame(animateFrame);
 }
 
-// Handle window resize
+// Handle window resize with 4K support
 function handleResize() {
   if (!camera || !renderer || !container) return;
   
@@ -470,6 +557,9 @@ function handleResize() {
   camera.updateProjectionMatrix();
   
   renderer.setSize(width, height);
+  
+  // Maintain high pixel ratio for 4K displays
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
 }
 
 // Exported functions
@@ -484,23 +574,29 @@ export function initScene2Background(containerElement) {
   
   // Create scene
   scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x000408, 30, 60);
+  scene.fog = new THREE.Fog(0x000204, 40, 80);
   
-  // Create camera
-  camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
+  // Create camera with wider FOV for immersive experience
+  camera = new THREE.PerspectiveCamera(85, width / height, 0.1, 100);
   camera.position.set(0, 0, 0);
   camera.lookAt(0, 0, -10);
   
-  // Create renderer
+  // Create renderer with enhanced settings for 4K
   renderer = new THREE.WebGLRenderer({
     antialias: true,
     alpha: true,
-    powerPreference: 'high-performance'
+    powerPreference: 'high-performance',
+    precision: 'highp'
   });
   
   renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000408, 1);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
+  renderer.setClearColor(0x000204, 1);
+  
+  // Enhanced renderer settings
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
   
   // Style canvas
   renderer.domElement.style.position = 'absolute';
@@ -512,10 +608,9 @@ export function initScene2Background(containerElement) {
   container.appendChild(renderer.domElement);
   
   // Create scene objects
-  createNebulaLayers();
+  createGalaxyLayers();
   createStarField();
   createDustParticles();
-  createGlowingPlanet();
   
   // Add resize listener
   window.addEventListener('resize', handleResize);
@@ -524,7 +619,7 @@ export function initScene2Background(containerElement) {
   isInitialized = true;
   animateFrame();
   
-  console.log('Scene 2 space nebula background initialized');
+  console.log('Enhanced 4K spiral galaxy background initialized');
 }
 
 export function updateScene2Background(scrollProgress) {
@@ -576,16 +671,18 @@ export function disposeScene2Background() {
   time = 0;
   
   // Clear arrays
-  nebulaLayers.length = 0;
+  galaxyLayers.length = 0;
   starSystems.length = 0;
   dustParticles = null;
-  glowingPlanet = null;
+  galaxyCore = null;
+  galaxyArms.length = 0;
   
   // Clear materials
-  materials.nebula.length = 0;
+  materials.galaxy.length = 0;
   materials.stars = null;
   materials.dust = null;
-  materials.planet = null;
+  materials.core = null;
+  materials.arms.length = 0;
   
-  console.log('Scene 2 space nebula background disposed');
+  console.log('Enhanced spiral galaxy background disposed');
 }
