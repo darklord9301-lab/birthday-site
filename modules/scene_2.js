@@ -574,6 +574,11 @@ export function disposeScene2() {
         glassPanel.parentNode.removeChild(glassPanel);
     }
     
+    // Remove container if it was auto-created
+    if (container && container.id === 'scene2-container' && container.parentNode) {
+        container.parentNode.removeChild(container);
+    }
+    
     // Dispose background
     disposeScene2Background();
     
