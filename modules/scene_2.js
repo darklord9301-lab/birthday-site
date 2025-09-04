@@ -230,7 +230,7 @@ function updateHintText() {
     if (!hintElement) return;
     
     const isMobile = isMobileDevice();
-    hintElement.textContent = isMobile ? 'Swipe →' : 'Press → or Click';
+    hintElement.textContent = isMobile ? 'Next →' : 'Press → or Click Next';
 }
 
 // Show hint with fade in
